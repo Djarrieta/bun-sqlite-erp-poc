@@ -46,24 +46,17 @@ export function nav(user: User, currentPath = ""): string {
     .navlink:hover { background:var(--surface-sunken); color:var(--text); }
     .navlink.is-active { background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--accent-text); }
 
-    .sidebar__foot { display:flex; flex-direction:column; gap:var(--space-2); padding-top:var(--space-4); border-top:1px solid var(--border); }
-    .account { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-1); border-radius:var(--radius); text-decoration:none; color:var(--text); }
-    .account:hover { background:var(--surface-sunken); }
-    .account__avatar { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:2rem; height:2rem; border-radius:var(--radius-full); background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent-text); font-weight:var(--font-weight-semibold); font-size:var(--font-size-sm); }
-    .account__id { display:flex; flex-direction:column; min-width:0; }
-    .account__email { font-size:var(--font-size-sm); font-weight:var(--font-weight-medium); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .account__role { font-family:var(--font-mono); font-size:var(--font-size-2xs); letter-spacing:var(--letter-spacing-wide); text-transform:uppercase; color:var(--text-muted); }
-    .sidebar__foot form { margin:0; }
-    .account__logout { width:100%; text-align:left; padding:var(--space-2) var(--space-3); border:1px solid var(--border); border-radius:var(--radius); background:transparent; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:var(--font-size-xs); }
-    .account__logout:hover { border-color:var(--border-strong); color:var(--text); }
+    .sidebar__foot { display:flex; align-items:center; padding-top:var(--space-4); border-top:1px solid var(--border); }
+    .account { display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-full); text-decoration:none; }
+    .account__avatar { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:2.25rem; height:2.25rem; border-radius:var(--radius-full); background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent-text); font-weight:var(--font-weight-semibold); font-size:var(--font-size-sm); transition:background 0.15s ease, box-shadow 0.15s ease; }
+    .account:hover .account__avatar { background:color-mix(in srgb, var(--accent) 24%, transparent); box-shadow:var(--shadow-sm); }
 
     @media (max-width: 860px) {
       .app-shell { grid-template-columns:1fr; }
       .sidebar { position:static; height:auto; flex-direction:row; align-items:center; flex-wrap:wrap; gap:var(--space-3); border-right:none; border-bottom:1px solid var(--border); }
       .sidebar__nav { flex-direction:row; flex-wrap:nowrap; align-items:center; order:3; flex-basis:100%; overflow-x:auto; gap:var(--space-1); }
       .sidebar__eyebrow { display:none; }
-      .sidebar__foot { flex-direction:row; align-items:center; gap:var(--space-2); margin-left:auto; padding-top:0; border-top:none; }
-      .account__logout { width:auto; }
+      .sidebar__foot { align-items:center; margin-left:auto; padding-top:0; border-top:none; }
       .app-main__inner { padding:var(--space-5) var(--space-4) var(--space-7); }
     }
   </style>
@@ -84,16 +77,9 @@ export function nav(user: User, currentPath = ""): string {
       }
     </nav>
     <div class="sidebar__foot">
-      <a class="account" href="/account">
+      <a class="account" href="/account" title="${escapeHtml(user.email)}" aria-label="Mi cuenta: ${escapeHtml(user.email)}">
         <span class="account__avatar" aria-hidden="true">${initial}</span>
-        <span class="account__id">
-          <span class="account__email">${escapeHtml(user.email)}</span>
-          <span class="account__role">${escapeHtml(user.role)}</span>
-        </span>
       </a>
-      <form method="POST" action="/logout">
-        <button class="account__logout" type="submit">Cerrar sesión</button>
-      </form>
     </div>
   </aside>`;
 }

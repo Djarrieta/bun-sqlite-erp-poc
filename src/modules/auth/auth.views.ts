@@ -195,10 +195,16 @@ export function accountPage(
     })}
     ${formActions(button({ label: "Cambiar contraseña" }))}`;
 
+  const logout = `<form method="POST" action="/logout">${button({
+    label: "Cerrar sesión",
+    variant: "secondary",
+  })}</form>`;
+
   const body = `
   ${pageHeader("Mi cuenta", {
     eyebrow: "Cuenta",
     subtitle: `${escapeHtml(user.email)} · ${escapeHtml(user.role)}`,
+    actions: logout,
   })}
   ${card(formBody, {
     as: "form",
