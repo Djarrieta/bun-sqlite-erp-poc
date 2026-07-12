@@ -43,15 +43,6 @@ db.exec(`
   );
 `);
 
-// Migration: add role to pre-existing users tables that lack the column.
-const userCols = db
-  .query<{ name: string }, []>("PRAGMA table_info(users)")
-  .all()
-  .map((c) => c.name);
-if (!userCols.includes("role")) {
-  db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'");
-}
-
 db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,

@@ -30,7 +30,7 @@ Then open <http://localhost:4000>
 
 The SQLite database is created automatically on first run at `data/app.sqlite`
 (the `data/` folder is git-ignored). The first account you register becomes the
-`admin`; everyone after is a `member`.
+`admin`; everyone after defaults to `member`.
 
 ## Project structure
 

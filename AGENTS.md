@@ -118,6 +118,10 @@ and a nav entry.
   interpolating it into server-rendered HTML (XSS defense).
 - **Database files:** stored under `data/` and git-ignored. Keep `data/.gitkeep`
   so the folder exists on fresh clones.
+- **Schema changes / migrations:** there are **none**. The dev database holds no
+  important data, so evolve a schema by editing its `CREATE TABLE IF NOT EXISTS`
+  and deleting `data/app.sqlite` (it is recreated on the next boot). Do **not**
+  add `ALTER TABLE` / `PRAGMA table_info` migration code.
 - **Imports:** always include the `.ts` extension and keep `import type` for
   type-only imports (required by `verbatimModuleSyntax`).
 

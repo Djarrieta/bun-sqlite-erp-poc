@@ -7,7 +7,13 @@
 
 export type Action = "view" | "create" | "read" | "update" | "delete";
 
-export type Role = "admin" | "member";
+export type Role =
+  | "admin"
+  | "sales"
+  | "financial"
+  | "engineer"
+  | "logistic"
+  | "member";
 
 /** Maps a role to the list of actions it is allowed to perform in a module. */
 export type ModulePermissions = Record<string, Action[]>;

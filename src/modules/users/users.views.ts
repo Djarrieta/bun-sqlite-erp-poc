@@ -11,10 +11,18 @@ import { USER_ROLES } from "./users.rules.ts";
 
 const ROLE_VARIANT: Record<string, BadgeVariant> = {
   admin: "info",
+  sales: "success",
+  financial: "warning",
+  engineer: "neutral",
+  logistic: "danger",
   member: "neutral",
 };
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrador",
+  sales: "Ventas",
+  financial: "Finanzas",
+  engineer: "Ingeniería",
+  logistic: "Logística",
   member: "Miembro",
 };
 

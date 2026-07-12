@@ -3,8 +3,15 @@ import type { ModulePermissions, Role } from "../../core/permissions.ts";
 /** Permission key for this module. */
 export const USERS_MODULE = "users";
 
-/** Assignable roles, in display order. */
-export const USER_ROLES: readonly Role[] = ["admin", "member"];
+/** Assignable roles, in display order. The default assigned to new users is `member`. */
+export const USER_ROLES: readonly Role[] = [
+  "admin",
+  "sales",
+  "financial",
+  "engineer",
+  "logistic",
+  "member",
+];
 
 /**
  * Business rules: only admins may manage users. Members have no access to this

@@ -14,12 +14,16 @@ export const ITEM_STATUSES: readonly ItemStatus[] = [
 /**
  * Business rules: who can do what in the items module. Change a role's list to
  * adjust its capabilities; views and routes read from this single source.
- *   - admin:  full CRUD.
- *   - member: can view, read, create and update — but not delete.
+ *   - logistic: full CRUD.
+ *   - everyone else (admin, sales, financial, engineer, member): read-only.
  */
 export const ITEM_PERMISSIONS: ModulePermissions = {
-  admin: ["view", "create", "read", "update", "delete"],
-  member: ["view", "read", "create", "update"],
+  logistic: ["view", "create", "read", "update", "delete"],
+  admin: ["view", "read"],
+  sales: ["view", "read"],
+  financial: ["view", "read"],
+  engineer: ["view", "read"],
+  member: ["view", "read"],
 };
 
 export interface ParsedItemForm {
