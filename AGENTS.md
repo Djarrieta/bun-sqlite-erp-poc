@@ -39,9 +39,14 @@ bun-sqlite-erp-poc/
     views.ts            # Dashboard page for "/"
     globals.d.ts        # Ambient Bun / bun:sqlite type declarations
     components/         # Presentation-only, reusable building blocks
-      layout.ts         # HTML document shell (injects theme), HTMX_SCRIPT, escapeHtml
+      layout.ts         # HTML document shell + centralized component CSS, HTMX_SCRIPT, escapeHtml
+      page.ts           # page() shell (nav + layout), pageHeader(), backLink()
       nav.ts            # Permission-aware top navigation
-      table.ts          # Generic data table
+      button.ts         # button() / linkButton() with variants + sizes
+      form.ts           # textField() / selectField() / formActions()
+      card.ts           # card() surface (renders <div> or <form>)
+      feedback.ts       # alert() banners (error / success / info / warning)
+      table.ts          # Generic, horizontally-scrollable data table
       badge.ts          # Status pill
     core/               # Framework-style plumbing (no feature logic)
       http.ts           # html / redirect / notFound / forbidden helpers
@@ -93,6 +98,13 @@ and a nav entry.
   `src/theme.ts` and are exposed as CSS custom properties. Components
   and views must reference them via `var(--token)` — **never hardcode hex colors
   or other design values inside a component or view.**
+- **UI composition:** build screens from the shared components in
+  `src/components/` — render authenticated pages with `page()` (nav + shell),
+  and use `pageHeader()`, `card()`, `textField()`/`selectField()`,
+  `button()`/`linkButton()`, `table()`, `badge()` and `alert()` instead of
+  hand-writing markup. Their styles are centralized in `layout.ts`, so a new
+  module should need little or no CSS of its own (only truly module-specific
+  bits belong in a small `PAGE_STYLES`).
 - **Permissions:** gate every capability in **both** places — hide the control
   in the view **and** return `forbidden()` in the route. The matrix in
   `<name>.rules.ts` (keyed by role) is the single source of truth.

@@ -26,6 +26,19 @@ export const theme = {
   radius: "8px",
   radiusFull: "50%",
 
+  // Spacing scale (used for gaps, padding, and margins everywhere)
+  space1: "0.25rem",
+  space2: "0.5rem",
+  space3: "0.75rem",
+  space4: "1rem",
+  space5: "1.5rem",
+  space6: "2rem",
+  space7: "2.5rem",
+
+  // Form controls (inputs, selects, buttons) share one comfortable padding
+  controlPadY: "0.6rem",
+  controlPadX: "0.85rem",
+
   // Color — brand
   accent: "#4f46e5",
   accentHover: "#4338ca",
@@ -60,6 +73,15 @@ export function themeVars(): string {
     --line-height-tight: ${theme.lineHeightTight};
     --radius: ${theme.radius};
     --radius-full: ${theme.radiusFull};
+    --space-1: ${theme.space1};
+    --space-2: ${theme.space2};
+    --space-3: ${theme.space3};
+    --space-4: ${theme.space4};
+    --space-5: ${theme.space5};
+    --space-6: ${theme.space6};
+    --space-7: ${theme.space7};
+    --control-pad-y: ${theme.controlPadY};
+    --control-pad-x: ${theme.controlPadX};
     --accent: ${theme.accent};
     --accent-hover: ${theme.accentHover};
     --on-accent: ${theme.onAccent};

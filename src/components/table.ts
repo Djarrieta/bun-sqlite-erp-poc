@@ -56,15 +56,18 @@ export function table<T>(opts: TableOptions<T>): string {
 
   return `
   <style>
+    .data-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .data-table { width:100%; border-collapse:collapse; font-size:var(--font-size-sm); }
-    .data-table th, .data-table td { padding:0.6rem 0.75rem; border-bottom:1px solid var(--border-faint); }
+    .data-table th, .data-table td { padding:0.6rem 0.75rem; border-bottom:1px solid var(--border-faint); white-space:nowrap; }
     .data-table th { text-transform:uppercase; letter-spacing:0.04em; font-size:var(--font-size-xs); opacity:0.7; font-weight:var(--font-weight-medium); }
     .data-table__row--link { cursor:pointer; }
     .data-table__row--link:hover { background:color-mix(in srgb, var(--accent) 7%, transparent); }
-    .data-table__empty { text-align:center; padding:2rem 0; opacity:0.6; }
+    .data-table__empty { text-align:center; padding:2rem 0; opacity:0.6; white-space:normal; }
   </style>
-  <table class="data-table"${id ? ` id="${id}"` : ""}>
-    <thead><tr>${head}</tr></thead>
-    <tbody>${body}</tbody>
-  </table>`;
+  <div class="data-table-wrap">
+    <table class="data-table"${id ? ` id="${id}"` : ""}>
+      <thead><tr>${head}</tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+  </div>`;
 }

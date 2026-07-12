@@ -1,8 +1,11 @@
 import type { User } from "../auth/auth.db.ts";
-import { HTMX_SCRIPT, escapeHtml, layout } from "../../components/layout.ts";
+import { escapeHtml } from "../../components/layout.ts";
 import { badge, type BadgeVariant } from "../../components/badge.ts";
 import { table } from "../../components/table.ts";
-import { nav } from "../../components/nav.ts";
+import { page, pageHeader, backLink } from "../../components/page.ts";
+import { card } from "../../components/card.ts";
+import { textField, selectField, formActions } from "../../components/form.ts";
+import { button, linkButton } from "../../components/button.ts";
 import { can } from "../../core/permissions.ts";
 import { parseTags, type Item, type ItemStatus } from "./items.db.ts";
 import { ITEMS_MODULE, ITEM_STATUSES } from "./items.rules.ts";
@@ -18,6 +21,11 @@ const STATUS_LABEL: Record<ItemStatus, string> = {
   active: "Activo",
   archived: "Archivado",
 };
+
+const STATUS_OPTIONS = ITEM_STATUSES.map((s) => ({
+  value: s,
+  label: STATUS_LABEL[s],
+}));
 
 interface FormValues {
   name: string;
@@ -37,21 +45,10 @@ function tagChips(tags: string): string {
     .join(" ");
 }
 
+/** Only item-specific bits; surfaces, controls and buttons come from the base styles. */
 const PAGE_STYLES = `
-  .items-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; }
-  .items-head h1 { margin:0; text-align:left; font-size:var(--font-size-lg); }
-  .tag-chip { display:inline-block; padding:0.1rem 0.5rem; border-radius:var(--radius); background:color-mix(in srgb, var(--accent) 10%, transparent); font-size:var(--font-size-xs); }
-  .card { border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; }
-  .field { display:flex; flex-direction:column; gap:0.35rem; margin-bottom:0.9rem; }
-  .field label { font-size:var(--font-size-sm); font-weight:var(--font-weight-medium); }
-  .field .err { color:var(--danger); font-size:var(--font-size-xs); }
-  select { padding:0.6rem 0.7rem; font-family:inherit; font-size:var(--font-size-base); border:1px solid var(--border); border-radius:var(--radius); background:transparent; color:inherit; }
-  .row-actions { display:flex; gap:0.6rem; align-items:center; margin-top:1rem; }
-  .btn-secondary { padding:0.6rem 1rem; border:1px solid var(--border); border-radius:var(--radius); background:transparent; color:inherit; text-decoration:none; cursor:pointer; font-size:var(--font-size-base); }
-  .btn-danger { padding:0.6rem 1rem; border:1px solid color-mix(in srgb, var(--danger) 40%, transparent); border-radius:var(--radius); background:transparent; color:var(--danger); cursor:pointer; font-size:var(--font-size-base); }
+  .tag-chip { display:inline-block; padding:var(--space-1) var(--space-2); border-radius:var(--radius); background:color-mix(in srgb, var(--accent) 10%, transparent); font-size:var(--font-size-xs); }
   .saved { color:var(--success); font-size:var(--font-size-sm); }
-  .backlink { display:inline-block; margin-bottom:1rem; font-size:var(--font-size-sm); }
-  a.primary { display:inline-block; text-decoration:none; }
 `;
 
 /** The name/tags/status fields, shared by the create and edit forms. */
@@ -60,52 +57,44 @@ function itemFields(
   errors: Record<string, string>,
   editable: boolean
 ): string {
-  const dis = editable ? "" : " disabled";
-  const options = ITEM_STATUSES.map(
-    (s) =>
-      `<option value="${s}"${s === values.status ? " selected" : ""}>${
-        STATUS_LABEL[s]
-      }</option>`
-  ).join("");
-
   return `
-    <div class="field">
-      <label for="name">Nombre</label>
-      <input id="name" type="text" name="name" value="${escapeHtml(
-        values.name
-      )}" maxlength="120" autocomplete="off" required${dis} />
-      ${errors.name ? `<span class="err">${escapeHtml(errors.name)}</span>` : ""}
-    </div>
-    <div class="field">
-      <label for="tags">Etiquetas <span style="opacity:0.6">(separadas por comas)</span></label>
-      <input id="tags" type="text" name="tags" value="${escapeHtml(
-        values.tags
-      )}" placeholder="ej: urgente, ventas"${dis} />
-      ${errors.tags ? `<span class="err">${escapeHtml(errors.tags)}</span>` : ""}
-    </div>
-    <div class="field">
-      <label for="status">Estado</label>
-      <select id="status" name="status"${dis}>${options}</select>
-      ${
-        errors.status
-          ? `<span class="err">${escapeHtml(errors.status)}</span>`
-          : ""
-      }
-    </div>`;
+    ${textField({
+      name: "name",
+      label: "Nombre",
+      value: values.name,
+      required: true,
+      disabled: !editable,
+      autocomplete: "off",
+      attrs: 'maxlength="120"',
+      error: errors.name,
+    })}
+    ${textField({
+      name: "tags",
+      label: "Etiquetas",
+      hint: "(separadas por comas)",
+      value: values.tags,
+      placeholder: "ej: urgente, ventas",
+      disabled: !editable,
+      error: errors.tags,
+    })}
+    ${selectField({
+      name: "status",
+      label: "Estado",
+      options: STATUS_OPTIONS,
+      value: values.status,
+      disabled: !editable,
+      error: errors.status,
+    })}`;
 }
 
 /** Full list page: a table of the user's items with permission-aware controls. */
 export function itemsListPage(items: Item[], user: User): string {
-  const newButton = can(user, ITEMS_MODULE, "create")
-    ? `<a class="primary" href="/items/new">+ Nuevo</a>`
+  const actions = can(user, ITEMS_MODULE, "create")
+    ? linkButton({ label: "+ Nuevo", href: "/items/new" })
     : "";
 
   const body = `
-  ${nav(user, "/items")}
-  <div class="items-head">
-    <h1>Items</h1>
-    ${newButton}
-  </div>
+  ${pageHeader("Items", { actions })}
   ${table<Item>({
     columns: [
       { header: "ID", cell: (it) => String(it.id), width: "64px" },
@@ -118,13 +107,12 @@ export function itemsListPage(items: Item[], user: User): string {
     empty: "No hay items todavía.",
   })}`;
 
-  return layout({
+  return page({
+    user,
+    current: "/items",
     title: "Items",
-    maxWidth: "820px",
-    margin: "2.5rem",
-    head: HTMX_SCRIPT,
-    pageStyles: PAGE_STYLES,
     body,
+    pageStyles: PAGE_STYLES,
   });
 }
 
@@ -134,25 +122,25 @@ export function itemNewPage(
   values: FormValues = { name: "", tags: "", status: "draft" },
   errors: Record<string, string> = {}
 ): string {
-  const body = `
-  ${nav(user, "/items")}
-  <a class="backlink" href="/items">← Volver a items</a>
-  <div class="items-head"><h1>Nuevo item</h1></div>
-  <form class="card" method="POST" action="/items">
+  const formBody = `
     ${itemFields(values, errors, true)}
-    <div class="row-actions">
-      <button class="primary" type="submit">Crear</button>
-      <a class="btn-secondary" href="/items">Cancelar</a>
-    </div>
-  </form>`;
+    ${formActions(
+      button({ label: "Crear" }),
+      linkButton({ label: "Cancelar", href: "/items", variant: "secondary" })
+    )}`;
 
-  return layout({
+  const body = `
+  ${backLink("/items", "← Volver a items")}
+  ${pageHeader("Nuevo item")}
+  ${card(formBody, { as: "form", attrs: 'method="POST" action="/items"' })}`;
+
+  return page({
+    user,
+    current: "/items",
     title: "Nuevo item",
-    maxWidth: "620px",
-    margin: "2.5rem",
-    head: HTMX_SCRIPT,
-    pageStyles: PAGE_STYLES,
     body,
+    maxWidth: "620px",
+    pageStyles: PAGE_STYLES,
   });
 }
 
@@ -175,45 +163,44 @@ export function itemFormFragment(
   };
   const errors = opts.errors ?? {};
 
-  const saveBtn = canUpdate
-    ? `<button class="primary" type="submit">Guardar</button>`
-    : "";
+  const saveBtn = canUpdate ? button({ label: "Guardar" }) : "";
   const deleteBtn = canDelete
-    ? `<button class="btn-danger" type="button" hx-delete="/items/${item.id}" hx-confirm="¿Eliminar este item?">Eliminar</button>`
+    ? button({
+        label: "Eliminar",
+        variant: "danger",
+        type: "button",
+        attrs: `hx-delete="/items/${item.id}" hx-confirm="¿Eliminar este item?"`,
+      })
     : "";
   const savedMsg = opts.saved ? `<span class="saved">✓ Guardado</span>` : "";
   const readonlyNote = !canUpdate
-    ? `<p style="opacity:0.7;font-size:var(--font-size-sm);margin-top:0">Tienes acceso de solo lectura.</p>`
+    ? `<p class="muted">Tienes acceso de solo lectura.</p>`
     : "";
 
-  return `<form id="item-form" class="card" hx-put="/items/${item.id}" hx-target="#item-form" hx-swap="outerHTML">
+  const formBody = `
     ${readonlyNote}
     ${itemFields(values, errors, canUpdate)}
-    <div class="row-actions">
-      ${saveBtn}
-      ${deleteBtn}
-      ${savedMsg}
-    </div>
-  </form>`;
+    ${formActions(saveBtn, deleteBtn, savedMsg)}`;
+
+  return card(formBody, {
+    as: "form",
+    attrs: `id="item-form" hx-put="/items/${item.id}" hx-target="#item-form" hx-swap="outerHTML"`,
+  });
 }
 
 /** Full detail page wrapping the editable form. */
 export function itemDetailPage(item: Item, user: User): string {
   const body = `
-  ${nav(user, "/items")}
-  <a class="backlink" href="/items">← Volver a items</a>
-  <div class="items-head">
-    <h1>Item #${item.id}</h1>
-    ${statusBadge(item.status)}
-  </div>
+  ${backLink("/items", "← Volver a items")}
+  ${pageHeader(`Item #${item.id}`, { actions: statusBadge(item.status) })}
   ${itemFormFragment(item, user)}`;
 
-  return layout({
+  return page({
+    user,
+    current: "/items",
     title: `Item #${item.id}`,
-    maxWidth: "620px",
-    margin: "2.5rem",
-    head: HTMX_SCRIPT,
-    pageStyles: PAGE_STYLES,
     body,
+    maxWidth: "620px",
+    pageStyles: PAGE_STYLES,
   });
 }
