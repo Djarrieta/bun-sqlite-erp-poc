@@ -1,0 +1,13 @@
+{
+  "name": "bun-sqlite-erp-poc",
+  "version": "1.0.0",
+  "description": "A modular server-rendered app built with Bun, TypeScript, HTMX and SQLite",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

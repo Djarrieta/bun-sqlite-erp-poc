@@ -1,0 +1,10 @@
+node_modules/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+dist/
+
+# Local database lives in data/ (contents ignored; keep the folder itself)
+data/*
+!data/.gitkeep
