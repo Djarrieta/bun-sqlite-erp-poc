@@ -3,49 +3,97 @@ import { getModules } from "../core/modules.ts";
 import { can } from "../core/permissions.ts";
 import { escapeHtml } from "./layout.ts";
 
+/** Product wordmark shown in the sidebar and on the auth screens. */
+export const APP_NAME = "Núcleo";
+export const APP_TAG = "ERP";
+
+function navLink(href: string, label: string, currentPath: string): string {
+  const active = href === "/" ? currentPath === "/" : currentPath.startsWith(href);
+  return `<a class="navlink${active ? " is-active" : ""}" href="${href}"${
+    active ? ' aria-current="page"' : ""
+  }>${escapeHtml(label)}</a>`;
+}
+
 /**
- * Top navigation shared across authenticated pages. Module links are shown only
- * when the current user is permitted to view that module, so navigation always
- * reflects each user's business rules.
+ * The persistent left sidebar shared across authenticated pages: brand, the
+ * permission-aware module links, and an account footer. Module links only
+ * appear when the current user may view that module, so navigation always
+ * reflects each user's business rules. Collapses to a top bar on small screens.
  */
 export function nav(user: User, currentPath = ""): string {
-  const links = [{ label: "Inicio", href: "/" }];
-  for (const m of getModules()) {
-    if (can(user, m.name, "view")) {
-      links.push({ label: m.label, href: m.basePath });
-    }
-  }
-
-  const linkHtml = links
-    .map((l) => {
-      const active =
-        l.href === "/" ? currentPath === "/" : currentPath.startsWith(l.href);
-      return `<a class="appnav__link${active ? " is-active" : ""}" href="${
-        l.href
-      }">${escapeHtml(l.label)}</a>`;
-    })
+  const modules = getModules().filter((m) => can(user, m.name, "view"));
+  const moduleLinks = modules
+    .map((m) => navLink(m.basePath, m.label, currentPath))
     .join("");
+  const initial = escapeHtml((user.email[0] ?? "?").toUpperCase());
 
   return `
   <style>
-    .appnav { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.75rem 0; margin-bottom:1.5rem; border-bottom:1px solid var(--border-faint); font-size:var(--font-size-sm); }
-    .appnav__links { display:flex; gap:0.25rem; flex-wrap:wrap; }
-    .appnav__link { padding:0.35rem 0.7rem; border-radius:var(--radius); text-decoration:none; color:inherit; opacity:0.75; }
-    .appnav__link:hover { background:color-mix(in srgb, var(--accent) 8%, transparent); opacity:1; }
-    .appnav__link.is-active { color:var(--accent); opacity:1; font-weight:var(--font-weight-medium); }
-    .appnav__right { display:flex; align-items:center; gap:0.75rem; }
-    .appnav__who { opacity:0.7; }
-    .appnav__right form { margin:0; }
-    .appnav__logout { border:1px solid var(--border); background:transparent; color:inherit; border-radius:var(--radius); padding:0.35rem 0.7rem; cursor:pointer; font-size:var(--font-size-xs); }
-    .appnav__logout:hover { border-color:var(--border-strong); }
+    .app-shell { display:grid; grid-template-columns:var(--sidebar-width) minmax(0,1fr); min-height:100vh; }
+    .app-main { min-width:0; }
+    .app-main__inner { max-width:var(--content-max); margin:0 auto; padding:var(--space-6) var(--space-6) var(--space-8); }
+
+    .sidebar { position:sticky; top:0; align-self:start; height:100vh; display:flex; flex-direction:column; gap:var(--space-5); padding:var(--space-5) var(--space-4); background:var(--surface); border-right:1px solid var(--border); }
+    .brand { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-1) var(--space-2); text-decoration:none; color:var(--text); }
+    .brand__mark { display:inline-flex; align-items:center; justify-content:center; width:2.1rem; height:2.1rem; border-radius:var(--radius); background:var(--accent); color:var(--on-accent); font-size:1.05rem; box-shadow:var(--shadow-sm); }
+    .brand__lockup { display:flex; flex-direction:column; line-height:1.15; }
+    .brand__name { font-weight:var(--font-weight-bold); letter-spacing:-0.01em; }
+    .brand__tag { font-family:var(--font-mono); font-size:var(--font-size-2xs); letter-spacing:var(--letter-spacing-wide); text-transform:uppercase; color:var(--text-muted); }
+
+    .sidebar__nav { display:flex; flex-direction:column; gap:2px; flex:1; min-height:0; overflow-y:auto; }
+    .sidebar__eyebrow { font-family:var(--font-mono); font-size:var(--font-size-2xs); letter-spacing:var(--letter-spacing-wide); text-transform:uppercase; color:var(--text-muted); padding:var(--space-4) var(--space-2) var(--space-1); }
+    .navlink { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border-radius:var(--radius); color:var(--text-muted); text-decoration:none; font-size:var(--font-size-sm); font-weight:var(--font-weight-medium); }
+    .navlink:hover { background:var(--surface-sunken); color:var(--text); }
+    .navlink.is-active { background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--accent-text); }
+
+    .sidebar__foot { display:flex; flex-direction:column; gap:var(--space-2); padding-top:var(--space-4); border-top:1px solid var(--border); }
+    .account { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-1); border-radius:var(--radius); text-decoration:none; color:var(--text); }
+    .account:hover { background:var(--surface-sunken); }
+    .account__avatar { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:2rem; height:2rem; border-radius:var(--radius-full); background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent-text); font-weight:var(--font-weight-semibold); font-size:var(--font-size-sm); }
+    .account__id { display:flex; flex-direction:column; min-width:0; }
+    .account__email { font-size:var(--font-size-sm); font-weight:var(--font-weight-medium); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .account__role { font-family:var(--font-mono); font-size:var(--font-size-2xs); letter-spacing:var(--letter-spacing-wide); text-transform:uppercase; color:var(--text-muted); }
+    .sidebar__foot form { margin:0; }
+    .account__logout { width:100%; text-align:left; padding:var(--space-2) var(--space-3); border:1px solid var(--border); border-radius:var(--radius); background:transparent; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:var(--font-size-xs); }
+    .account__logout:hover { border-color:var(--border-strong); color:var(--text); }
+
+    @media (max-width: 860px) {
+      .app-shell { grid-template-columns:1fr; }
+      .sidebar { position:static; height:auto; flex-direction:row; align-items:center; flex-wrap:wrap; gap:var(--space-3); border-right:none; border-bottom:1px solid var(--border); }
+      .sidebar__nav { flex-direction:row; flex-wrap:nowrap; align-items:center; order:3; flex-basis:100%; overflow-x:auto; gap:var(--space-1); }
+      .sidebar__eyebrow { display:none; }
+      .sidebar__foot { flex-direction:row; align-items:center; gap:var(--space-2); margin-left:auto; padding-top:0; border-top:none; }
+      .account__logout { width:auto; }
+      .app-main__inner { padding:var(--space-5) var(--space-4) var(--space-7); }
+    }
   </style>
-  <header class="appnav">
-    <nav class="appnav__links">${linkHtml}</nav>
-    <div class="appnav__right">
-      <span class="appnav__who">${escapeHtml(user.email)}</span>
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand__mark" aria-hidden="true">◧</span>
+      <span class="brand__lockup">
+        <span class="brand__name">${APP_NAME}</span>
+        <span class="brand__tag">${APP_TAG}</span>
+      </span>
+    </a>
+    <nav class="sidebar__nav" aria-label="Navegación principal">
+      ${navLink("/", "Inicio", currentPath)}
+      ${
+        moduleLinks
+          ? `<span class="sidebar__eyebrow">Módulos</span>${moduleLinks}`
+          : ""
+      }
+    </nav>
+    <div class="sidebar__foot">
+      <a class="account" href="/account">
+        <span class="account__avatar" aria-hidden="true">${initial}</span>
+        <span class="account__id">
+          <span class="account__email">${escapeHtml(user.email)}</span>
+          <span class="account__role">${escapeHtml(user.role)}</span>
+        </span>
+      </a>
       <form method="POST" action="/logout">
-        <button class="appnav__logout" type="submit">Cerrar sesión</button>
+        <button class="account__logout" type="submit">Cerrar sesión</button>
       </form>
     </div>
-  </header>`;
+  </aside>`;
 }

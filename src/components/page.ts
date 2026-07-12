@@ -12,10 +12,11 @@ export interface PageOptions {
   user: User;
   /** Document title (also the browser tab text). */
   title: string;
-  /** Main content rendered below the navigation. */
+  /** Main content rendered next to the navigation. */
   body: string;
   /** Active nav path, e.g. "/items". */
   current?: string;
+  /** Caps the width of the content column (e.g. narrower for forms). */
   maxWidth?: string;
   margin?: string;
   /** Load HTMX. Defaults to true. */
@@ -24,27 +25,38 @@ export interface PageOptions {
   pageStyles?: string;
 }
 
-/** A full authenticated page: top nav + centered content through the shell. */
+/** A full authenticated page: sidebar shell + centered content column. */
 export function page(opts: PageOptions): string {
+  const inner = opts.maxWidth
+    ? `<div class="app-main__inner" style="max-width:${opts.maxWidth}">`
+    : `<div class="app-main__inner">`;
   return layout({
     title: opts.title,
-    maxWidth: opts.maxWidth ?? "820px",
-    margin: opts.margin ?? "2.5rem",
+    maxWidth: "none",
+    margin: "0",
     head: opts.htmx === false ? undefined : HTMX_SCRIPT,
     pageStyles: opts.pageStyles ?? "",
-    body: `${nav(opts.user, opts.current ?? "")}\n${opts.body}`,
+    body: `<div class="app-shell">${nav(opts.user, opts.current ?? "")}<main class="app-main">${inner}${opts.body}</div></main></div>`,
   });
 }
 
 export interface PageHeaderOptions {
   /** Right-aligned actions cluster (e.g. a "+ Nuevo" button or a badge). */
   actions?: string;
+  /** Small uppercase mono label above the title (e.g. the section name). */
+  eyebrow?: string;
+  /** Muted supporting line below the title. */
+  subtitle?: string;
 }
 
-/** A page title row with an optional actions cluster on the right. */
+/** A page title row with an optional eyebrow, subtitle and actions cluster. */
 export function pageHeader(title: string, opts: PageHeaderOptions = {}): string {
   return `<header class="page-head">
-    <h1 class="page-head__title">${title}</h1>
+    <div>
+      ${opts.eyebrow ? `<span class="page-head__eyebrow">${opts.eyebrow}</span>` : ""}
+      <h1 class="page-head__title">${title}</h1>
+      ${opts.subtitle ? `<p class="page-head__sub">${opts.subtitle}</p>` : ""}
+    </div>
     ${opts.actions ? `<div class="page-head__actions">${opts.actions}</div>` : ""}
   </header>`;
 }

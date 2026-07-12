@@ -58,11 +58,13 @@ export function table<T>(opts: TableOptions<T>): string {
   <style>
     .data-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .data-table { width:100%; border-collapse:collapse; font-size:var(--font-size-sm); }
-    .data-table th, .data-table td { padding:0.6rem 0.75rem; border-bottom:1px solid var(--border-faint); white-space:nowrap; }
-    .data-table th { text-transform:uppercase; letter-spacing:0.04em; font-size:var(--font-size-xs); opacity:0.7; font-weight:var(--font-weight-medium); }
+    .data-table th, .data-table td { padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--border-faint); white-space:nowrap; text-align:left; }
+    .data-table thead th { background:var(--surface-sunken); text-transform:uppercase; letter-spacing:var(--letter-spacing-wide); font-family:var(--font-mono); font-size:var(--font-size-2xs); color:var(--text-muted); font-weight:var(--font-weight-medium); border-bottom:1px solid var(--border); }
+    .data-table tbody td { font-variant-numeric:tabular-nums; }
+    .data-table tbody tr:last-child td { border-bottom:none; }
     .data-table__row--link { cursor:pointer; }
-    .data-table__row--link:hover { background:color-mix(in srgb, var(--accent) 7%, transparent); }
-    .data-table__empty { text-align:center; padding:2rem 0; opacity:0.6; white-space:normal; }
+    .data-table__row--link:hover { background:var(--surface-sunken); }
+    .data-table__empty { text-align:center; padding:var(--space-6) 0; color:var(--text-muted); white-space:normal; }
   </style>
   <div class="data-table-wrap">
     <table class="data-table"${id ? ` id="${id}"` : ""}>

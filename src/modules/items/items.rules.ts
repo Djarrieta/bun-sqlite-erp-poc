@@ -19,7 +19,7 @@ export const ITEM_STATUSES: readonly ItemStatus[] = [
  */
 export const ITEM_PERMISSIONS: ModulePermissions = {
   logistic: ["view", "create", "read", "update", "delete"],
-  admin: ["view", "read"],
+  admin:  ["view", "create", "read", "update", "delete"],
   sales: ["view", "read"],
   financial: ["view", "read"],
   engineer: ["view", "read"],

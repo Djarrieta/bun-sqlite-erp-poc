@@ -1,11 +1,19 @@
 import type { User } from "../auth/auth.db.ts";
-import { escapeHtml } from "../../components/layout.ts";
-import { badge, type BadgeVariant } from "../../components/badge.ts";
-import { table } from "../../components/table.ts";
-import { page, pageHeader, backLink } from "../../components/page.ts";
-import { card } from "../../components/card.ts";
-import { textField, selectField, formActions } from "../../components/form.ts";
-import { button, linkButton } from "../../components/button.ts";
+import {
+  escapeHtml,
+  badge,
+  type BadgeVariant,
+  table,
+  page,
+  pageHeader,
+  backLink,
+  card,
+  textField,
+  selectField,
+  formActions,
+  button,
+  linkButton,
+} from "../../components/index.ts";
 import { can } from "../../core/permissions.ts";
 import { parseTags, type Item, type ItemStatus } from "./items.db.ts";
 import { ITEMS_MODULE, ITEM_STATUSES } from "./items.rules.ts";
@@ -94,18 +102,21 @@ export function itemsListPage(items: Item[], user: User): string {
     : "";
 
   const body = `
-  ${pageHeader("Items", { actions })}
-  ${table<Item>({
-    columns: [
-      { header: "ID", cell: (it) => String(it.id), width: "64px" },
-      { header: "Nombre", cell: (it) => escapeHtml(it.name) },
-      { header: "Etiquetas", cell: (it) => tagChips(it.tags) },
-      { header: "Estado", cell: (it) => statusBadge(it.status), width: "130px" },
-    ],
-    rows: items,
-    rowHref: (it) => `/items/${it.id}`,
-    empty: "No hay items todavía.",
-  })}`;
+  ${pageHeader("Items", { eyebrow: "Catálogo", actions })}
+  ${card(
+    table<Item>({
+      columns: [
+        { header: "ID", cell: (it) => String(it.id), width: "64px" },
+        { header: "Nombre", cell: (it) => escapeHtml(it.name) },
+        { header: "Etiquetas", cell: (it) => tagChips(it.tags) },
+        { header: "Estado", cell: (it) => statusBadge(it.status), width: "130px" },
+      ],
+      rows: items,
+      rowHref: (it) => `/items/${it.id}`,
+      empty: "No hay items todavía.",
+    }),
+    { class: "card--flush" }
+  )}`;
 
   return page({
     user,

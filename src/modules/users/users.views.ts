@@ -1,11 +1,19 @@
 import type { User } from "../auth/auth.db.ts";
-import { escapeHtml } from "../../components/layout.ts";
-import { badge, type BadgeVariant } from "../../components/badge.ts";
-import { table } from "../../components/table.ts";
-import { page, pageHeader, backLink } from "../../components/page.ts";
-import { card } from "../../components/card.ts";
-import { textField, selectField, formActions } from "../../components/form.ts";
-import { button, linkButton } from "../../components/button.ts";
+import {
+  escapeHtml,
+  badge,
+  type BadgeVariant,
+  table,
+  page,
+  pageHeader,
+  backLink,
+  card,
+  textField,
+  selectField,
+  formActions,
+  button,
+  linkButton,
+} from "../../components/index.ts";
 import type { Role } from "../../core/permissions.ts";
 import { USER_ROLES } from "./users.rules.ts";
 
@@ -77,9 +85,10 @@ export function usersTableFragment(users: User[], currentUser: User): string {
 export function usersListPage(users: User[], currentUser: User): string {
   const body = `
   ${pageHeader("Usuarios", {
+    eyebrow: "Administración",
     actions: linkButton({ label: "+ Nuevo usuario", href: "/users/new" }),
   })}
-  ${usersTableFragment(users, currentUser)}`;
+  ${card(usersTableFragment(users, currentUser), { class: "card--flush" })}`;
 
   return page({
     user: currentUser,
