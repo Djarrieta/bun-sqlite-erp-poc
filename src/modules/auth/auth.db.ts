@@ -126,4 +126,11 @@ export class SessionRepository extends Repository {
   deleteByUser(userId: number): void {
     this.db.query("DELETE FROM sessions WHERE user_id = ?").run(userId);
   }
+
+  /** Purge sessions whose expiry has already passed (housekeeping). */
+  deleteExpired(): void {
+    this.db
+      .query("DELETE FROM sessions WHERE expires_at <= datetime('now')")
+      .run();
+  }
 }

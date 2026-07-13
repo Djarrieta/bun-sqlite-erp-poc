@@ -115,10 +115,55 @@ function componentStyles(): string {
     .back-link:hover { color: var(--text); }
     .muted { color: var(--text-muted); font-size: var(--font-size-sm); }
 
+    /* Data tables: a self-contained surface with a search header, a table, and
+       a pagination footer. Shared here so every module's list screen matches
+       and so HTMX fragments (which ship no <style>) inherit these rules. */
+    .data-region { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .data-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
+    .data-search { max-width: 24rem; }
+    .data-results { display: block; }
+    .data-results.htmx-request { opacity: 0.55; transition: opacity 0.12s ease; }
+
+    .data-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+    .data-table th, .data-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-faint); white-space: nowrap; text-align: left; }
+    .data-table thead th { background: var(--surface-sunken); text-transform: uppercase; letter-spacing: var(--letter-spacing-wide); font-family: var(--font-mono); font-size: var(--font-size-2xs); color: var(--text-muted); font-weight: var(--font-weight-medium); border-bottom: 1px solid var(--border); }
+    .data-table tbody td { font-variant-numeric: tabular-nums; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table__row--link { cursor: pointer; }
+    .data-table__row--link:hover { background: var(--surface-sunken); }
+    .data-table__empty { text-align: center; padding: var(--space-6) 0; color: var(--text-muted); white-space: normal; }
+
+    .data-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border); }
+    .data-pagination__info { color: var(--text-muted); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+    .data-pagination__controls { display: flex; align-items: center; gap: var(--space-2); }
+    .data-pagination__page { color: var(--text-muted); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+
     /* Small screens */
     @media (max-width: 640px) {
       h1 { font-size: var(--font-size-lg); }
       .form-actions .btn { flex: 1 1 auto; }
+
+      /* Mobile-first list view: drop the outer surface chrome and let each row
+         collapse into its own stacked card of label/value pairs. This is the
+         optimized view for the app's primary (mobile) usage. */
+      .data-region { border: none; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
+      .data-toolbar { padding: 0 0 var(--space-2); border-bottom: none; }
+      .data-search { max-width: none; }
+      .data-pagination { padding: var(--space-4) 0 0; border-top: none; }
+
+      .data-table-wrap { overflow-x: visible; }
+      .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+      .data-table thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+      .data-table tr { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-sm); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
+      .data-table td { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); padding: var(--space-2) 0; border-bottom: 1px solid var(--border-faint); white-space: normal; text-align: right; }
+      .data-table td:last-child { border-bottom: none; }
+      .data-table td::before { content: attr(data-label); flex: 0 0 auto; font-family: var(--font-mono); font-size: var(--font-size-2xs); letter-spacing: var(--letter-spacing-wide); text-transform: uppercase; color: var(--text-muted); text-align: left; }
+      .data-table td[data-label=""]::before { display: none; }
+      .data-table td.data-cell--primary { justify-content: flex-start; font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); text-align: left; }
+      .data-table td.data-cell--primary::before { display: none; }
+      .data-table td.data-table__empty { justify-content: center; text-align: center; }
+      .data-table td.data-table__empty::before { display: none; }
     }`;
 }
 

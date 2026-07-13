@@ -48,14 +48,14 @@ bun-sqlite-erp-poc/
       form.ts           # textField() / selectField() / formActions()
       card.ts           # card() surface (renders <div> or <form>)
       feedback.ts       # alert() banners (error / success / info / warning)
-      table.ts          # Generic, horizontally-scrollable data table
+      table.ts            # Data table; dataTable() adds search + pagination + mobile cards
       badge.ts          # Status pill
     core/               # Framework-style plumbing (no feature logic)
       http.ts           # html / redirect / notFound / forbidden helpers
       router.ts         # Tiny ":param" router + RouteContext
       modules.ts        # AppModule base class + registerModule / getModules
       permissions.ts    # can() / registerPermissions + Role & Action types
-      repository.ts     # Repository base class holding the shared db
+      repository.ts       # Repository base: shared db + paginate() (search + pagination)
     modules/            # Feature modules, one folder per module (see "Module anatomy")
 ```
 
@@ -104,10 +104,11 @@ and a nav entry.
 - **UI composition:** build screens from the shared components in
   `src/components/` — render authenticated pages with `page()` (nav + shell),
   and use `pageHeader()`, `card()`, `textField()`/`selectField()`,
-  `button()`/`linkButton()`, `table()`, `badge()` and `alert()` instead of
-  hand-writing markup. Their styles are centralized in `layout.ts`, so a new
-  module should need little or no CSS of its own (only truly module-specific
-  bits belong in a small `PAGE_STYLES`).
+  `button()`/`linkButton()`, `table()`/`dataTable()`, `badge()` and `alert()`
+  instead of hand-writing markup. Their styles are centralized in `layout.ts`,
+  so a new module should need little or no CSS of its own (only truly
+  module-specific bits belong in a small `PAGE_STYLES`). See **Building list
+  screens** for tables that need search and pagination.
 - **Permissions:** gate every capability in **both** places — hide the control
   in the view **and** return `forbidden()` in the route. The matrix in
   `<name>.rules.ts` (keyed by role) is the single source of truth.
@@ -127,6 +128,44 @@ and a nav entry.
   add `ALTER TABLE` / `PRAGMA table_info` migration code.
 - **Imports:** always include the `.ts` extension and keep `import type` for
   type-only imports (required by `verbatimModuleSyntax`).
+
+## Building list screens (mobile-first tables)
+
+This app is used mostly on **mobile**, and lists can hold **thousands** of
+rows. Build every list with `dataTable()` from `src/components/table.ts` — never
+hand-roll `<table>` markup, and prefer it over the low-level `table()` for any
+list that can grow. `dataTable()` gives you three things that must all keep
+working when you touch a list:
+
+- **Responsive rows.** Wide screens get a normal table; below 640px each row
+  collapses into a stacked card of `label: value` pairs (driven by each cell's
+  `data-label`). Mark the headline column with `primary: true` so its value
+  becomes the card title. **This mobile card view is the primary, optimized
+  experience — verify it whenever you change a list.**
+- **Search.** Pass `search: { value, placeholder }`. The box filters (debounced,
+  via HTMX) by whatever columns the repository searches, and pushes the query to
+  the URL so it's bookmarkable.
+- **Pagination.** Pass `pagination: { page, pageSize, total }`. Always page in
+  SQL via the repository — never load a whole table into memory.
+
+Wire a new list module in three steps (copy the `items` module's shape):
+
+1. **Repository** — expose `list(userId, params: PageParams): Page<Row>` that
+   delegates to the base `Repository.paginate(...)`, naming the searchable
+   columns. Only `q` and `params` are safely bound; **every other `paginate`
+   field is interpolated into SQL, so pass only trusted constants there — never
+   user input.**
+2. **Route** — read `q` and `page` from `url.searchParams`, gate with `can(...)`,
+   then: if the request has the `HX-Request` header return the results fragment
+   (`dataTableBody(...)`, exposed as an `xResults(...)` view); otherwise return
+   the full page. Push-URL keeps a refresh/bookmark working via this same path.
+3. **View** — build **one** `DataTableOptions` object (same `id` and `endpoint`)
+   and feed it to both `dataTable(...)` (full page) and `dataTableBody(...)`
+   (fragment) so the two render identically.
+
+Do **not** re-add per-component `<style>` for tables: all data-table, search and
+pagination CSS lives in `layout.ts` so HTMX fragments (which ship no styles)
+stay styled.
 
 ## The auth module (special case)
 

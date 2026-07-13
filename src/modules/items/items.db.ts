@@ -1,4 +1,4 @@
-import { Repository } from "../../core/repository.ts";
+import { Repository, type Page, type PageParams } from "../../core/repository.ts";
 import { db } from "../../db.ts";
 
 /** Lifecycle states an item can be in. */
@@ -49,12 +49,22 @@ export function serializeTags(tags: string[]): string {
 
 /** Data access for items, scoped to the owning user. */
 export class ItemRepository extends Repository {
-  list(userId: number): Item[] {
-    return this.db
-      .query<Item, [number]>(
-        "SELECT * FROM items WHERE user_id = ? ORDER BY id DESC"
-      )
-      .all(userId);
+  /**
+   * One page of the user's items, newest first, optionally filtered by a search
+   * that matches the name or any tag. Backed by the shared `paginate` helper so
+   * every module's list screen searches and pages the same way.
+   */
+  list(userId: number, params: PageParams = {}): Page<Item> {
+    return this.paginate<Item>({
+      from: "items",
+      where: ["user_id = ?"],
+      params: [userId],
+      searchColumns: ["name", "tags"],
+      q: params.q,
+      orderBy: "id DESC",
+      page: params.page,
+      pageSize: params.pageSize,
+    });
   }
 
   get(id: number, userId: number): Item | null {

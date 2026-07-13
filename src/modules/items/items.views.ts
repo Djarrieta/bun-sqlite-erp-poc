@@ -3,7 +3,9 @@ import {
   escapeHtml,
   badge,
   type BadgeVariant,
-  table,
+  dataTable,
+  dataTableBody,
+  type DataTableOptions,
   page,
   pageHeader,
   backLink,
@@ -14,6 +16,7 @@ import {
   button,
   linkButton,
 } from "../../components/index.ts";
+import type { Page } from "../../core/repository.ts";
 import { can } from "../../core/permissions.ts";
 import { parseTags, type Item, type ItemStatus } from "./items.db.ts";
 import { ITEMS_MODULE, ITEM_STATUSES } from "./items.rules.ts";
@@ -95,28 +98,43 @@ function itemFields(
     })}`;
 }
 
-/** Full list page: a table of the user's items with permission-aware controls. */
-export function itemsListPage(items: Item[], user: User): string {
+/**
+ * Column + search + pagination config for the items list, shared by the full
+ * page and the HTMX results fragment so both render identically.
+ */
+function itemsTableOptions(result: Page<Item>, q: string): DataTableOptions<Item> {
+  return {
+    id: "items",
+    endpoint: "/items",
+    columns: [
+      { header: "ID", cell: (it) => String(it.id), width: "64px" },
+      { header: "Nombre", cell: (it) => escapeHtml(it.name), primary: true },
+      { header: "Etiquetas", cell: (it) => tagChips(it.tags) },
+      { header: "Estado", cell: (it) => statusBadge(it.status), width: "130px" },
+    ],
+    rows: result.rows,
+    rowHref: (it) => `/items/${it.id}`,
+    empty: q
+      ? "Ningún item coincide con tu búsqueda."
+      : "No hay items todavía.",
+    search: { value: q, placeholder: "Buscar por nombre o etiqueta…" },
+    pagination: {
+      page: result.page,
+      pageSize: result.pageSize,
+      total: result.total,
+    },
+  };
+}
+
+/** Full list page: a searchable, paginated table of the user's items. */
+export function itemsListPage(result: Page<Item>, q: string, user: User): string {
   const actions = can(user, ITEMS_MODULE, "create")
     ? linkButton({ label: "+ Nuevo", href: "/items/new" })
     : "";
 
   const body = `
   ${pageHeader("Items", { eyebrow: "Catálogo", actions })}
-  ${card(
-    table<Item>({
-      columns: [
-        { header: "ID", cell: (it) => String(it.id), width: "64px" },
-        { header: "Nombre", cell: (it) => escapeHtml(it.name) },
-        { header: "Etiquetas", cell: (it) => tagChips(it.tags) },
-        { header: "Estado", cell: (it) => statusBadge(it.status), width: "130px" },
-      ],
-      rows: items,
-      rowHref: (it) => `/items/${it.id}`,
-      empty: "No hay items todavía.",
-    }),
-    { class: "card--flush" }
-  )}`;
+  ${dataTable(itemsTableOptions(result, q))}`;
 
   return page({
     user,
@@ -125,6 +143,11 @@ export function itemsListPage(items: Item[], user: User): string {
     body,
     pageStyles: PAGE_STYLES,
   });
+}
+
+/** The swappable results fragment returned to HTMX search/paging requests. */
+export function itemsResults(result: Page<Item>, q: string): string {
+  return dataTableBody(itemsTableOptions(result, q));
 }
 
 /** Create page with an empty (or error-repopulated) form. */

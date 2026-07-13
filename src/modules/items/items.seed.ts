@@ -58,7 +58,7 @@ export function seedItems(): void {
     return;
   }
   const items = new ItemRepository();
-  if (items.list(owner.id).length > 0) {
+  if (items.list(owner.id).total > 0) {
     console.log(`   items: ${owner.email} already has items, skipping`);
     return;
   }

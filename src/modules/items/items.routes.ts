@@ -8,6 +8,7 @@ import {
   itemFormFragment,
   itemNewPage,
   itemsListPage,
+  itemsResults,
 } from "./items.views.ts";
 
 /**
@@ -18,10 +19,17 @@ import {
 export function registerItemRoutes(router: Router): void {
   const items = new ItemRepository();
 
-  // List
-  router.get("/items", ({ user }: RouteContext) => {
+  // List — supports ?q=<search>&page=<n>. HTMX (search box / paging) asks for
+  // just the results fragment; a normal navigation gets the full page.
+  router.get("/items", ({ req, url, user }: RouteContext) => {
     if (!can(user, ITEMS_MODULE, "view")) return forbidden();
-    return html(itemsListPage(items.list(user.id), user));
+    const q = url.searchParams.get("q") ?? "";
+    const page = Number(url.searchParams.get("page") ?? "1");
+    const result = items.list(user.id, { q, page });
+    if (req.headers.get("HX-Request") === "true") {
+      return html(itemsResults(result, q));
+    }
+    return html(itemsListPage(result, q, user));
   });
 
   // New form — registered before "/items/:id" so it isn't captured as an id.

@@ -16,7 +16,7 @@ import { MIN_PASSWORD, isValidEmail } from "./auth.rules.ts";
  */
 
 const SESSION_COOKIE = "session";
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -146,6 +146,10 @@ export class AuthService {
   // --- Sessions --------------------------------------------------------
 
   createSession(userId: number): string {
+    // Opportunistic housekeeping: drop already-expired rows at this natural
+    // write point so the table doesn't accumulate dead sessions over time.
+    // (Expiry is still enforced on every read in `SessionRepository.findUser`.)
+    this.sessions.deleteExpired();
     const id = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
     this.sessions.create(id, userId, expiresAt);
