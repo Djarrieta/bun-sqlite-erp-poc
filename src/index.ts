@@ -10,12 +10,15 @@ import { usersModule } from "./modules/users/index.ts";
 const PORT = Number(process.env.PORT ?? 4000);
 
 // Every feature registers as a module on the shared router. Auth is a module
-// too (self-service /account routes); its public login/register/reset routes
+// too (self-service /account routes); its public login/logout/reset routes
 // run before the guard via `handlePublicAuth`. Add new modules here.
 const router = new Router();
 registerModule(router, itemsModule);
 registerModule(router, usersModule);
 registerModule(router, authModule);
+
+// There is no public sign-up: seed the first admin if the database is empty.
+await authService.ensureAdmin();
 
 const server = Bun.serve({
   port: PORT,
@@ -24,7 +27,7 @@ const server = Bun.serve({
     const { pathname } = url;
     const user = authService.getUserFromRequest(req);
 
-    // --- Public auth routes (login/register/logout/forgot/reset) --------
+    // --- Public auth routes (login/logout/forgot/reset) ----------------
     const authResponse = await handlePublicAuth(req, url, user);
     if (authResponse) return authResponse;
 

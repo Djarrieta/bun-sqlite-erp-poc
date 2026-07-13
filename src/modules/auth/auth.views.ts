@@ -24,9 +24,7 @@ const AUTH_STYLES = `
   .auth-card__title { margin: 0; font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
   .auth-card__sub { margin: var(--space-1) 0 var(--space-2); color: var(--text-muted); font-size: var(--font-size-sm); }
   .auth-form { display: flex; flex-direction: column; gap: var(--space-3); }
-  .alt { text-align: center; margin: 0; font-size: var(--font-size-sm); color: var(--text-muted); }
-  .reset-link { margin-top: var(--space-2); padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius); font-size: var(--font-size-xs); word-break: break-all; background: var(--surface-sunken); }
-  .reset-link a { font-weight: var(--font-weight-medium); }`;
+  .alt { text-align: center; margin: 0; font-size: var(--font-size-sm); color: var(--text-muted); }`;
 
 /** Shared centered auth shell: brand lockup + a surface card + optional footer. */
 function authShell(opts: {
@@ -54,109 +52,32 @@ function authShell(opts: {
   </div>`;
 }
 
-/** Login or register page. */
-export function authPage(
-  mode: "login" | "register",
+/**
+ * Login page. There is no public sign-up: accounts are created by an admin in
+ * the users module, so this page only authenticates existing users.
+ */
+export function loginPage(
   opts: { error?: string; email?: string; notice?: string } = {}
 ): string {
-  const isLogin = mode === "login";
-  const title = isLogin ? "Iniciar sesión" : "Crear cuenta";
-  const sub = isLogin
-    ? "Accede a tu panel de control."
-    : "Crea una cuenta para empezar.";
-  const action = isLogin ? "/login" : "/register";
-  const submitLabel = isLogin ? "Entrar" : "Registrarme";
-  const altText = isLogin
-    ? `¿No tienes cuenta? <a href="/register">Regístrate</a>`
-    : `¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>`;
-
   const inner = `
     ${alert(opts.notice ?? "", "success")}
     ${alert(opts.error ?? "", "error")}
-    <form class="auth-form" method="POST" action="${action}">
+    <form class="auth-form" method="POST" action="/login">
       <input type="email" name="email" placeholder="tu@correo.com"
         value="${escapeHtml(opts.email ?? "")}" autocomplete="email" required />
       <input type="password" name="password" placeholder="Contraseña"
-        autocomplete="${isLogin ? "current-password" : "new-password"}"
-        minlength="8" required />
-      ${button({ label: submitLabel, block: true })}
-    </form>
-    ${isLogin ? `<p class="alt"><a href="/forgot">¿Olvidaste tu contraseña?</a></p>` : ""}`;
-
-  return layout({
-    title: `${title} · App`,
-    maxWidth: "none",
-    margin: "0",
-    pageStyles: AUTH_STYLES,
-    body: authShell({
-      title,
-      sub,
-      body: inner,
-      footer: `<p class="alt">${altText}</p>`,
-    }),
-  });
-}
-
-/** Forgot-password page: request a reset link (and, in dev, reveal it). */
-export function forgotPasswordPage(
-  opts: { sent?: boolean; email?: string; resetUrl?: string; error?: string } = {}
-): string {
-  const inner = opts.sent
-    ? `${alert(
-        "Si el correo existe, generamos un enlace para restablecer la contraseña.",
-        "success"
-      )}${
-        opts.resetUrl
-          ? `<div class="reset-link">Enlace de desarrollo:<br /><a href="${opts.resetUrl}">${escapeHtml(
-              opts.resetUrl
-            )}</a></div>`
-          : ""
-      }`
-    : `${alert(opts.error ?? "", "error")}
-    <form class="auth-form" method="POST" action="/forgot">
-      <input type="email" name="email" placeholder="tu@correo.com"
-        value="${escapeHtml(opts.email ?? "")}" autocomplete="email" required />
-      ${button({ label: "Enviar enlace", block: true })}
+        autocomplete="current-password" minlength="8" required />
+      ${button({ label: "Entrar", block: true })}
     </form>`;
 
   return layout({
-    title: "Restablecer contraseña · App",
+    title: "Iniciar sesión · App",
     maxWidth: "none",
     margin: "0",
     pageStyles: AUTH_STYLES,
     body: authShell({
-      title: "Restablecer contraseña",
-      sub: "Te enviaremos un enlace para crear una nueva.",
-      body: inner,
-      footer: `<p class="alt"><a href="/login">Volver a iniciar sesión</a></p>`,
-    }),
-  });
-}
-
-/** Reset-password page: choose a new password using a one-time token. */
-export function resetPasswordPage(opts: {
-  token: string;
-  error?: string;
-}): string {
-  const inner = `
-    ${alert(opts.error ?? "", "error")}
-    <form class="auth-form" method="POST" action="/reset">
-      <input type="hidden" name="token" value="${escapeHtml(opts.token)}" />
-      <input type="password" name="password" placeholder="Nueva contraseña"
-        autocomplete="new-password" minlength="8" required />
-      <input type="password" name="confirm" placeholder="Repite la contraseña"
-        autocomplete="new-password" minlength="8" required />
-      ${button({ label: "Guardar contraseña", block: true })}
-    </form>`;
-
-  return layout({
-    title: "Nueva contraseña · App",
-    maxWidth: "none",
-    margin: "0",
-    pageStyles: AUTH_STYLES,
-    body: authShell({
-      title: "Nueva contraseña",
-      sub: "Elige una contraseña segura.",
+      title: "Iniciar sesión",
+      sub: "Accede a tu panel de control.",
       body: inner,
     }),
   });

@@ -49,3 +49,33 @@ export function parseNewUserForm(form: FormData): ParsedNewUser {
   const role: Role = isRole(roleRaw) ? roleRaw : "member";
   return { email, password, role, errors };
 }
+
+/**
+ * Parse and validate the admin "set temporary password" form. Admins override a
+ * user's password without knowing the current one, so only the new password is
+ * validated here.
+ */
+export function parsePasswordForm(form: FormData): {
+  password: string;
+  errors: Record<string, string>;
+} {
+  const password = String(form.get("password") ?? "");
+  const errors: Record<string, string> = {};
+  if (password.length < 8)
+    errors.password = "La contraseña debe tener al menos 8 caracteres.";
+  return { password, errors };
+}
+
+/**
+ * Generate a random temporary password for admin-created accounts. Uses an
+ * ambiguity-free alphabet (no 0/O/1/l/I) so it is easy to read and copy.
+ */
+export function generateTempPassword(length = 14): string {
+  const alphabet =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let out = "";
+  for (let i = 0; i < length; i++) out += alphabet[bytes[i]! % alphabet.length];
+  return out;
+}

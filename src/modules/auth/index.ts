@@ -11,7 +11,7 @@ import { registerAccountRoutes } from "./auth.routes.ts";
  *   - It owns multiple tables and a service layer (see `auth.db.ts` /
  *     `auth.service.ts`), where a typical module has a single repository.
  *   - `register()` only mounts the authenticated self-service `/account` routes.
- *     The PUBLIC login/register/logout/reset routes cannot go through the shared
+ *     The PUBLIC login/logout/reset routes cannot go through the shared
  *     router (they must run before the auth guard), so they are exported as
  *     `handlePublicAuth` and dispatched directly in `src/index.ts`.
  *   - It does NOT call `registerPermissions`: account access isn't gated by the

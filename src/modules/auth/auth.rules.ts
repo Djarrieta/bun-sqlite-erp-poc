@@ -4,7 +4,7 @@
  *
  * DIVERGENCE FROM THE MODULE PATTERN: other modules export a `ModulePermissions`
  * matrix here and register it (see `items.rules.ts`). Auth intentionally does
- * NOT — account actions (login, register, change/reset password) are available
+ * NOT — account actions (login, change/reset password) are available
  * to the relevant user regardless of role, so there is no per-role matrix and
  * the module never calls `registerPermissions`.
  */

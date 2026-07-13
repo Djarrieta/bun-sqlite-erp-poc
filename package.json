@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "start": "bun src/index.ts"
+    "start": "bun src/index.ts",
+    "seeddb": "bun src/scripts/seed.ts",
+    "resetdb": "bun src/scripts/reset.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

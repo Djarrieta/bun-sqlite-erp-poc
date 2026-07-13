@@ -20,6 +20,8 @@ A small, server-rendered web app with **no client build step**.
 bun install
 bun run dev     # watch mode, http://localhost:4000
 bun run start   # one-off run
+bun seeddb      # populate the DB from each module's *.seed.ts
+bun resetdb     # wipe ALL data (users included), leaving an empty schema
 ```
 
 - `tsc` is not part of the workflow. **Type/import checking is done by booting
@@ -76,6 +78,7 @@ module**):
 | `<name>.rules.ts`  | `ModulePermissions` matrix, the module key constant, form validation  |
 | `<name>.views.ts`  | HTML/HTMX rendering functions                                         |
 | `<name>.routes.ts` | `register<Name>Routes(router)` — one handler per route                |
+| `<name>.seed.ts`   | Optional dev seed: exports `seed<Name>()` used by `bun seeddb` (auth needs none) |
 | `index.ts`         | `class XModule extends AppModule` + exported singleton `xModule`; side-effect `import "./<name>.db.ts"` (table-owning modules) so the `CREATE` runs at load |
 
 ### Adding a module

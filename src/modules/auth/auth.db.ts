@@ -6,11 +6,11 @@ import { db } from "../../db.ts";
  * Data access for the auth module.
  *
  * DIVERGENCE FROM THE MODULE PATTERN: a typical module owns a single table and
- * one repository (see `items.db.ts`). Auth is special — it owns three related
- * tables (users, sessions, password_reset_tokens) and therefore three
- * repositories. They are consolidated here so the module still exposes a single
- * `*.db.ts` entry point. Tables are declared users-first because the other two
- * hold foreign keys into `users(id)`.
+ * one repository (see `items.db.ts`). Auth is special — it owns two related
+ * tables (users, sessions) and therefore two repositories. They are
+ * consolidated here so the module still exposes a single `*.db.ts` entry point.
+ * Tables are declared users-first because sessions holds a foreign key into
+ * `users(id)`.
  */
 
 /** An application user. Shared type imported across the app (type-only). */
@@ -22,16 +22,7 @@ export interface User {
   created_at: string;
 }
 
-/** A one-time password-reset token row. */
-export interface PasswordResetToken {
-  token: string;
-  user_id: number;
-  expires_at: string;
-  used: number;
-  created_at: string;
-}
-
-// --- Tables (users first: sessions and reset tokens reference users.id) -----
+// --- Tables (users first: sessions references users.id) ---------------------
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -48,16 +39,6 @@ db.exec(`
     id TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     expires_at TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-`);
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    token TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    expires_at TEXT NOT NULL,
-    used INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
@@ -144,38 +125,5 @@ export class SessionRepository extends Repository {
   /** Invalidate every session for a user (e.g. after a password change). */
   deleteByUser(userId: number): void {
     this.db.query("DELETE FROM sessions WHERE user_id = ?").run(userId);
-  }
-}
-
-/** Data access for one-time password-reset tokens. */
-export class PasswordResetRepository extends Repository {
-  create(token: string, userId: number, expiresAt: string): void {
-    this.db
-      .query(
-        "INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)"
-      )
-      .run(token, userId, expiresAt);
-  }
-
-  /** Return an unused, unexpired token row, or null. */
-  findValid(token: string): PasswordResetToken | null {
-    return this.db
-      .query<PasswordResetToken, [string]>(
-        `SELECT * FROM password_reset_tokens
-         WHERE token = ? AND used = 0 AND expires_at > datetime('now')`
-      )
-      .get(token);
-  }
-
-  markUsed(token: string): void {
-    this.db
-      .query("UPDATE password_reset_tokens SET used = 1 WHERE token = ?")
-      .run(token);
-  }
-
-  deleteByUser(userId: number): void {
-    this.db
-      .query("DELETE FROM password_reset_tokens WHERE user_id = ?")
-      .run(userId);
   }
 }

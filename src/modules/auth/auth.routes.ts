@@ -1,20 +1,18 @@
 import { html, redirect } from "../../core/http.ts";
 import type { RouteContext, Router } from "../../core/router.ts";
 import { authService } from "./auth.service.ts";
-import {
-  accountPage,
-  authPage,
-  forgotPasswordPage,
-  resetPasswordPage,
-} from "./auth.views.ts";
+import { accountPage, loginPage } from "./auth.views.ts";
 import type { User } from "./auth.db.ts";
 
-const isProd = process.env.NODE_ENV === "production";
-
 /**
- * Handle public (unauthenticated) auth routes: login, register, logout, and the
- * forgot/reset password flow. Returns a Response when the request matches one of
- * these routes, otherwise null so the caller can continue dispatching.
+ * Handle public (unauthenticated) auth routes: login and logout. Returns a
+ * Response when the request matches one of these routes, otherwise null so the
+ * caller can continue dispatching.
+ *
+ * There is NO public registration and NO self-service password reset: accounts
+ * are created only by an admin (see the users module), and a forgotten password
+ * is reset by an admin assigning a temporary one. The very first admin is
+ * seeded at startup by `authService.ensureAdmin()` in `src/index.ts`.
  *
  * DIVERGENCE FROM THE MODULE PATTERN: normal modules register every route on the
  * shared `Router` inside `register()`, which runs AFTER the auth guard. These
@@ -30,29 +28,14 @@ export async function handlePublicAuth(
 
   if (pathname === "/login") {
     if (user) return redirect("/");
-    if (req.method === "GET") return html(authPage("login"));
+    if (req.method === "GET") return html(loginPage());
     if (req.method === "POST") {
       const form = await req.formData();
       const email = String(form.get("email") ?? "");
       const password = String(form.get("password") ?? "");
       const result = await authService.login(email, password);
       if (!result.ok || !result.user)
-        return html(authPage("login", { error: result.error, email }), 401);
-      const sid = authService.createSession(result.user.id);
-      return redirect("/", { "Set-Cookie": authService.sessionCookie(sid) });
-    }
-  }
-
-  if (pathname === "/register") {
-    if (user) return redirect("/");
-    if (req.method === "GET") return html(authPage("register"));
-    if (req.method === "POST") {
-      const form = await req.formData();
-      const email = String(form.get("email") ?? "");
-      const password = String(form.get("password") ?? "");
-      const result = await authService.register(email, password);
-      if (!result.ok || !result.user)
-        return html(authPage("register", { error: result.error, email }), 400);
+        return html(loginPage({ error: result.error, email }), 401);
       const sid = authService.createSession(result.user.id);
       return redirect("/", { "Set-Cookie": authService.sessionCookie(sid) });
     }
@@ -64,54 +47,6 @@ export async function handlePublicAuth(
     return redirect("/login", {
       "Set-Cookie": authService.clearSessionCookie(),
     });
-  }
-
-  if (pathname === "/forgot") {
-    if (user) return redirect("/");
-    if (req.method === "GET") return html(forgotPasswordPage());
-    if (req.method === "POST") {
-      const form = await req.formData();
-      const email = String(form.get("email") ?? "");
-      const { token } = authService.requestPasswordReset(email);
-      // Dev convenience: reveal the reset link. In production it is emailed.
-      const resetUrl =
-        token && !isProd
-          ? `${url.origin}/reset?token=${encodeURIComponent(token)}`
-          : undefined;
-      return html(forgotPasswordPage({ sent: true, email, resetUrl }));
-    }
-  }
-
-  if (pathname === "/reset") {
-    if (req.method === "GET") {
-      const token = url.searchParams.get("token") ?? "";
-      if (!token)
-        return html(
-          forgotPasswordPage({
-            error: "Enlace inválido. Solicita uno nuevo.",
-          })
-        );
-      return html(resetPasswordPage({ token }));
-    }
-    if (req.method === "POST") {
-      const form = await req.formData();
-      const token = String(form.get("token") ?? "");
-      const password = String(form.get("password") ?? "");
-      const confirm = String(form.get("confirm") ?? "");
-      if (password !== confirm)
-        return html(
-          resetPasswordPage({ token, error: "Las contraseñas no coinciden." }),
-          400
-        );
-      const result = await authService.resetPassword(token, password);
-      if (!result.ok)
-        return html(resetPasswordPage({ token, error: result.error }), 400);
-      return html(
-        authPage("login", {
-          notice: "Tu contraseña fue actualizada. Inicia sesión.",
-        })
-      );
-    }
   }
 
   return null;

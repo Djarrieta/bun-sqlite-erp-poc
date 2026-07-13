@@ -1,6 +1,5 @@
 import type { Role } from "../../core/permissions.ts";
 import {
-  PasswordResetRepository,
   SessionRepository,
   UserRepository,
   type User,
@@ -18,9 +17,20 @@ import { MIN_PASSWORD, isValidEmail } from "./auth.rules.ts";
 
 const SESSION_COOKIE = "session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 const isProd = process.env.NODE_ENV === "production";
+
+/**
+ * A valid Argon2id hash of a random secret, used to keep login timing uniform
+ * when the email is unknown (we still run a real verify). Generated lazily so
+ * it always matches the current runtime's parameters — a hard-coded hash can be
+ * rejected by newer Bun versions as `WeakParameters`.
+ */
+let dummyHashPromise: Promise<string> | null = null;
+function getDummyHash(): Promise<string> {
+  return (dummyHashPromise ??= Bun.password.hash(crypto.randomUUID()));
+}
+
 
 export interface AuthResult {
   ok: boolean;
@@ -36,17 +46,31 @@ export interface AuthResult {
 export class AuthService {
   constructor(
     private readonly users = new UserRepository(),
-    private readonly sessions = new SessionRepository(),
-    private readonly resets = new PasswordResetRepository()
+    private readonly sessions = new SessionRepository()
   ) {}
 
-  /** Register a new account. The very first user becomes an admin. */
-  async register(email: string, password: string): Promise<AuthResult> {
-    const role: Role = this.users.count() === 0 ? "admin" : "member";
-    return this.createUser(email, password, role);
+  /**
+   * Seed the very first admin when the users table is empty. There is no public
+   * registration, so this bootstrap is the only way the initial account exists.
+   * Credentials come from `ADMIN_EMAIL` / `ADMIN_PASSWORD`, with dev defaults.
+   */
+  async ensureAdmin(): Promise<void> {
+    if (this.users.count() > 0) return;
+    const email = (process.env.ADMIN_EMAIL ?? "admin@example.com")
+      .trim()
+      .toLowerCase();
+    const password = process.env.ADMIN_PASSWORD ?? "changeme8";
+    const result = await this.createUser(email, password, "admin");
+    if (result.ok) {
+      console.log(`👤 Seeded initial admin: ${email}`);
+      if (!isProd)
+        console.log(`   Temporary password: ${password} (change it after login)`);
+    } else {
+      console.error(`Failed to seed admin: ${result.error}`);
+    }
   }
 
-  /** Create a user with an explicit role (used by admins and by register). */
+  /** Create a user with an explicit role (used by admins and the seed). */
   async createUser(
     email: string,
     password: string,
@@ -72,8 +96,7 @@ export class AuthService {
     email = email.trim().toLowerCase();
     const user = this.users.findByEmail(email);
     // Verify even when the user is missing to keep timing uniform.
-    const hash =
-      user?.password_hash ?? "$argon2id$v=19$m=65536,t=2,p=1$aaaa$aaaa";
+    const hash = user?.password_hash ?? (await getDummyHash());
     const valid = await Bun.password.verify(password, hash);
     if (!user || !valid)
       return { ok: false, error: "Correo o contraseña incorrectos." };
@@ -102,36 +125,22 @@ export class AuthService {
   }
 
   /**
-   * Begin a forgot-password flow. Returns the token so a caller can surface it
-   * in development; in production it would be emailed instead. Returns a null
-   * token when the email is unknown (callers should still show a generic
-   * message to avoid leaking which emails exist).
+   * Admin override: set a new temporary password for another user without
+   * knowing the current one. Every existing session for that user is
+   * invalidated so the new password takes effect immediately.
    */
-  requestPasswordReset(email: string): { token: string | null } {
-    email = email.trim().toLowerCase();
-    const user = this.users.findByEmail(email);
-    if (!user) return { token: null };
-    const token = crypto.randomUUID() + crypto.randomUUID().replaceAll("-", "");
-    const expiresAt = new Date(Date.now() + RESET_TTL_MS).toISOString();
-    this.resets.create(token, user.id, expiresAt);
-    return { token };
-  }
-
-  /** Complete a forgot-password flow using a one-time token. */
-  async resetPassword(token: string, newPassword: string): Promise<AuthResult> {
-    if (newPassword.length < MIN_PASSWORD)
+  async adminSetPassword(userId: number, next: string): Promise<AuthResult> {
+    if (next.length < MIN_PASSWORD)
       return {
         ok: false,
         error: `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`,
       };
-    const row = this.resets.findValid(token);
-    if (!row) return { ok: false, error: "El enlace no es válido o ya expiró." };
-    const passwordHash = await Bun.password.hash(newPassword);
-    this.users.updatePassword(row.user_id, passwordHash);
-    this.resets.markUsed(token);
-    // Force re-login everywhere after a reset.
-    this.sessions.deleteByUser(row.user_id);
-    return { ok: true };
+    const user = this.users.findById(userId);
+    if (!user) return { ok: false, error: "Usuario no encontrado." };
+    const passwordHash = await Bun.password.hash(next);
+    this.users.updatePassword(userId, passwordHash);
+    this.sessions.deleteByUser(userId);
+    return { ok: true, user };
   }
 
   // --- Sessions --------------------------------------------------------

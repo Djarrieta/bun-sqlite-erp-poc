@@ -40,5 +40,6 @@ declare module "bun:sqlite" {
       get(...params: Params): Row | null;
       run(...params: Params): void;
     };
+    transaction<Fn extends (...args: any[]) => any>(fn: Fn): Fn;
   }
 }
