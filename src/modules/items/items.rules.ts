@@ -40,6 +40,7 @@ export function parseItemForm(form: FormData): ParsedItemForm {
   const name = String(form.get("name") ?? "").trim();
   const tags = parseTags(String(form.get("tags") ?? ""));
   const statusRaw = String(form.get("status") ?? "draft");
+  const isUnique = String(form.get("is_unique") ?? "0") === "1";
 
   const errors: Record<string, string> = {};
   if (!name) errors.name = "El nombre es obligatorio.";
@@ -49,5 +50,5 @@ export function parseItemForm(form: FormData): ParsedItemForm {
   if (!isStatus(statusRaw)) errors.status = "Estado inválido.";
 
   const status: ItemStatus = isStatus(statusRaw) ? statusRaw : "draft";
-  return { input: { name, tags, status }, errors };
+  return { input: { name, tags, status, isUnique }, errors };
 }

@@ -1,12 +1,12 @@
 import { UserRepository } from "../auth/auth.db.ts";
 import { ItemRepository, type ItemInput } from "./items.db.ts";
-import { ITEM_STATUSES } from "./items.rules.ts";
 
 /**
- * Development seed for the items module. Creates a few random items owned by
- * the primary dev account (falling back to the first user). Items are scoped by
- * `user_id`, so seeding needs an existing owner — run `seedUsers` first.
- * Idempotent: skips when the owner already has items.
+ * Development seed for the items module. The catalog is shared org-wide, so
+ * items are created once (attributed to the primary dev account for audit) and
+ * visible to everyone — run `seedUsers` first so an owner exists. Most items are
+ * seeded `active` so the movements seed has stock to move. Idempotent: skips
+ * when any items already exist.
  */
 const SEED_OWNER_EMAIL = "djarrieta@erp.com";
 const SEED_COUNT = 100;
@@ -43,10 +43,15 @@ function randomTags(): string[] {
 }
 
 function randomItem(): ItemInput {
+  // Bias toward "active" so the movements seed has plenty of movable stock,
+  // while leaving a few draft/archived for list variety.
+  const roll = Math.random();
+  const status = roll < 0.8 ? "active" : roll < 0.9 ? "draft" : "archived";
   return {
     name: `${pick(SAMPLE_NAMES)} #${Math.floor(Math.random() * 1000)}`,
     tags: randomTags(),
-    status: pick(ITEM_STATUSES),
+    status,
+    isUnique: Math.random() < 0.15,
   };
 }
 
@@ -58,10 +63,10 @@ export function seedItems(): void {
     return;
   }
   const items = new ItemRepository();
-  if (items.list(owner.id).total > 0) {
-    console.log(`   items: ${owner.email} already has items, skipping`);
+  if (items.list().total > 0) {
+    console.log("   items: catalog already seeded, skipping");
     return;
   }
   for (let i = 0; i < SEED_COUNT; i++) items.create(randomItem(), owner.id);
-  console.log(`   items: created ${SEED_COUNT} items for ${owner.email}`);
+  console.log(`   items: created ${SEED_COUNT} items (owner ${owner.email})`);
 }

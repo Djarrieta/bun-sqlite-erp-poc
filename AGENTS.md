@@ -114,7 +114,11 @@ and a nav entry.
   `<name>.rules.ts` (keyed by role) is the single source of truth.
 - **Data access:** only through `Repository` subclasses. Never open a second DB
   connection; all repositories share the singleton from `src/db.ts`. Scope
-  per-user data by `user.id`.
+  per-user data by `user.id`. **Exception — shared/org-wide modules:** the
+  catalog/inventory modules (`items`, `locations`, `inventory`, `movements`) are
+  deliberately **not** per-user scoped; everyone sees the same data and
+  `created_by` is audit-only. New feature modules should still default to
+  per-user scoping unless they are shared master data like these.
 - **The `User` type** lives in `src/modules/auth/auth.db.ts`. Import it
   **type-only** (`import type { User }`). Do **not** import `User` from
   `src/db.ts`.

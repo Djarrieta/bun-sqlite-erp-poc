@@ -25,6 +25,24 @@ export function notFound(message = "Not Found"): Response {
   return new Response(message, { status: 404 });
 }
 
+/**
+ * A downloadable file response (sets `Content-Disposition: attachment`). Keep
+ * `filename` a trusted, developer-supplied value — it goes into the header.
+ */
+export function attachment(
+  body: string | Uint8Array,
+  filename: string,
+  contentType = "application/octet-stream"
+): Response {
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": contentType,
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
+}
+
 /** 403 response for when a user's business rules don't permit an action. */
 export function forbidden(
   message = "No tienes permiso para hacer esto."

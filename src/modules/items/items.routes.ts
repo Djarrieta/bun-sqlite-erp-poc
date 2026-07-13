@@ -13,8 +13,8 @@ import {
 
 /**
  * Registers the items module's routes. Every handler checks the user's business
- * rules via `can(...)` before reading or mutating data, and all queries are
- * scoped to `user.id` so users only ever touch their own items.
+ * rules via `can(...)` before reading or mutating data. The items catalog is
+ * shared org-wide, so queries are NOT scoped by user; `created_by` is audit-only.
  */
 export function registerItemRoutes(router: Router): void {
   const items = new ItemRepository();
@@ -35,13 +35,11 @@ export function registerItemRoutes(router: Router): void {
       tags: url.searchParams.getAll("tag"),
     };
     const page = Number(url.searchParams.get("page") ?? "1");
-    const result = items.list(user.id, { ...filters, page });
+    const result = items.list({ ...filters, page });
     if (req.headers.get("HX-Request") === "true") {
       return html(itemsResults(result, filters));
     }
-    return html(
-      itemsListPage(result, filters, items.distinctTags(user.id), user)
-    );
+    return html(itemsListPage(result, filters, items.distinctTags(), user));
   });
 
   // New form — registered before "/items/:id" so it isn't captured as an id.
@@ -58,7 +56,12 @@ export function registerItemRoutes(router: Router): void {
       return html(
         itemNewPage(
           user,
-          { name: input.name, tags: input.tags.join(", "), status: input.status },
+          {
+            name: input.name,
+            tags: input.tags.join(", "),
+            status: input.status,
+            isUnique: input.isUnique,
+          },
           errors
         ),
         400
@@ -71,7 +74,7 @@ export function registerItemRoutes(router: Router): void {
   // Detail
   router.get("/items/:id", ({ user, params }: RouteContext) => {
     if (!can(user, ITEMS_MODULE, "read")) return forbidden();
-    const item = items.get(Number(params.id), user.id);
+    const item = items.get(Number(params.id));
     if (!item) return notFound();
     return html(itemDetailPage(item, user));
   });
@@ -79,7 +82,7 @@ export function registerItemRoutes(router: Router): void {
   // Update
   router.put("/items/:id", async ({ req, user, params }: RouteContext) => {
     if (!can(user, ITEMS_MODULE, "update")) return forbidden();
-    const existing = items.get(Number(params.id), user.id);
+    const existing = items.get(Number(params.id));
     if (!existing) return notFound();
 
     const { input, errors } = parseItemForm(await req.formData());
@@ -89,18 +92,19 @@ export function registerItemRoutes(router: Router): void {
         name: input.name,
         tags: input.tags.join(","),
         status: input.status,
+        is_unique: input.isUnique ? 1 : 0,
       };
       return html(itemFormFragment(withEdits, user, { errors }), 400);
     }
 
-    const updated = items.update(Number(params.id), input, user.id) ?? existing;
+    const updated = items.update(Number(params.id), input) ?? existing;
     return html(itemFormFragment(updated, user, { saved: true }));
   });
 
-  // Delete — tell HTMX to navigate back to the list.
+  // Delete — master data is archived (never hard-deleted); navigate to the list.
   router.delete("/items/:id", ({ user, params }: RouteContext) => {
     if (!can(user, ITEMS_MODULE, "delete")) return forbidden();
-    items.delete(Number(params.id), user.id);
+    items.archive(Number(params.id));
     return html("", 200, { "HX-Redirect": "/items" });
   });
 }

@@ -3,6 +3,9 @@ import { db } from "../db.ts";
 // them, so a reset is deterministic even on a fresh database.
 import "../modules/auth/auth.db.ts";
 import "../modules/items/items.db.ts";
+import "../modules/locations/locations.db.ts";
+import "../modules/inventory/inventory.db.ts";
+import "../modules/movements/movements.db.ts";
 
 /**
  * Wipe ALL application data — including users — leaving an empty schema behind.

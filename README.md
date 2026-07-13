@@ -40,8 +40,8 @@ src/
   db.ts          # Shared SQLite connection
   theme.ts       # Design tokens + :root CSS variables (single source of truth)
   components/    # Reusable UI (layout, nav, table, badge)
-  core/          # Router, permissions, repository base, module system
-  modules/       # Feature modules: items, users, auth
+  core/          # Router, permissions, repository base, module system, CSV
+  modules/       # Feature modules: items, locations, inventory, movements, users, auth
 ```
 
 See [AGENTS.md](AGENTS.md) for architecture, conventions, and how to add a

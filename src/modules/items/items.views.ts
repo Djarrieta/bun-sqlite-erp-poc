@@ -38,14 +38,26 @@ const STATUS_OPTIONS = ITEM_STATUSES.map((s) => ({
   label: STATUS_LABEL[s],
 }));
 
+/** Yes/No options for the boolean "unique" flag (no checkbox component). */
+const BOOL_OPTIONS = [
+  { value: "0", label: "No" },
+  { value: "1", label: "Sí" },
+];
+
 interface FormValues {
   name: string;
   tags: string;
   status: ItemStatus;
+  isUnique: boolean;
 }
 
 function statusBadge(status: ItemStatus): string {
   return badge(STATUS_LABEL[status] ?? status, STATUS_VARIANT[status] ?? "neutral");
+}
+
+/** A small pill flagging one-of-a-kind items in lists and headers. */
+function uniqueBadge(isUnique: number): string {
+  return isUnique ? badge("Único", "info") : "";
 }
 
 function tagChips(tags: string): string {
@@ -95,6 +107,14 @@ function itemFields(
       value: values.status,
       disabled: !editable,
       error: errors.status,
+    })}
+    ${selectField({
+      name: "is_unique",
+      label: "Único",
+      hint: "(una sola unidad en todo el sistema)",
+      options: BOOL_OPTIONS,
+      value: values.isUnique ? "1" : "0",
+      disabled: !editable,
     })}`;
 }
 
@@ -122,7 +142,14 @@ function itemsTableOptions(
     endpoint: "/items",
     columns: [
       { header: "ID", cell: (it) => String(it.id), width: "64px" },
-      { header: "Nombre", cell: (it) => escapeHtml(it.name), primary: true },
+      {
+        header: "Nombre",
+        cell: (it) => {
+          const flag = uniqueBadge(it.is_unique);
+          return escapeHtml(it.name) + (flag ? ` ${flag}` : "");
+        },
+        primary: true,
+      },
       { header: "Etiquetas", cell: (it) => tagChips(it.tags) },
       { header: "Estado", cell: (it) => statusBadge(it.status), width: "130px" },
     ],
@@ -188,7 +215,7 @@ export function itemsResults(result: Page<Item>, filters: ItemFilters): string {
 /** Create page with an empty (or error-repopulated) form. */
 export function itemNewPage(
   user: User,
-  values: FormValues = { name: "", tags: "", status: "draft" },
+  values: FormValues = { name: "", tags: "", status: "draft", isUnique: false },
   errors: Record<string, string> = {}
 ): string {
   const formBody = `
@@ -229,6 +256,7 @@ export function itemFormFragment(
     name: item.name,
     tags: parseTags(item.tags).join(", "),
     status: item.status,
+    isUnique: item.is_unique === 1,
   };
   const errors = opts.errors ?? {};
 
@@ -259,9 +287,12 @@ export function itemFormFragment(
 
 /** Full detail page wrapping the editable form. */
 export function itemDetailPage(item: Item, user: User): string {
+  const headerActions = [uniqueBadge(item.is_unique), statusBadge(item.status)]
+    .filter(Boolean)
+    .join(" ");
   const body = `
   ${backLink("/items", "← Volver a items")}
-  ${pageHeader(`Item #${item.id}`, { actions: statusBadge(item.status) })}
+  ${pageHeader(`Item #${item.id}`, { actions: headerActions })}
   ${itemFormFragment(item, user)}`;
 
   return page({
