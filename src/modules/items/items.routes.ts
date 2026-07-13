@@ -19,17 +19,29 @@ import {
 export function registerItemRoutes(router: Router): void {
   const items = new ItemRepository();
 
-  // List — supports ?q=<search>&page=<n>. HTMX (search box / paging) asks for
-  // just the results fragment; a normal navigation gets the full page.
+  // List — supports ?q=<search>&status=&tag=&page=<n>. HTMX (search box,
+  // filters, paging) asks for just the results fragment; a normal navigation
+  // gets the full page (which also renders the search + filter controls).
   router.get("/items", ({ req, url, user }: RouteContext) => {
     if (!can(user, ITEMS_MODULE, "view")) return forbidden();
-    const q = url.searchParams.get("q") ?? "";
+    // Default to the "active" status on a first visit (no `status` param yet);
+    // once the toolbar form has submitted, an explicit empty value = "Todos".
+    const status = url.searchParams.has("status")
+      ? url.searchParams.get("status") ?? ""
+      : "active";
+    const filters = {
+      q: url.searchParams.get("q") ?? "",
+      status,
+      tags: url.searchParams.getAll("tag"),
+    };
     const page = Number(url.searchParams.get("page") ?? "1");
-    const result = items.list(user.id, { q, page });
+    const result = items.list(user.id, { ...filters, page });
     if (req.headers.get("HX-Request") === "true") {
-      return html(itemsResults(result, q));
+      return html(itemsResults(result, filters));
     }
-    return html(itemsListPage(result, q, user));
+    return html(
+      itemsListPage(result, filters, items.distinctTags(user.id), user)
+    );
   });
 
   // New form — registered before "/items/:id" so it isn't captured as an id.

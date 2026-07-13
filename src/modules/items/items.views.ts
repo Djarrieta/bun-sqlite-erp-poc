@@ -98,11 +98,25 @@ function itemFields(
     })}`;
 }
 
+/** Search text + filter selections that drive the items list. */
+export interface ItemFilters {
+  q: string;
+  status: string;
+  tags: string[];
+}
+
 /**
- * Column + search + pagination config for the items list, shared by the full
- * page and the HTMX results fragment so both render identically.
+ * Column + search + filter + pagination config for the items list, shared by
+ * the full page and the HTMX results fragment so both render identically. Tag
+ * options are only needed to render the filter panel (full page), so the
+ * fragment can omit them.
  */
-function itemsTableOptions(result: Page<Item>, q: string): DataTableOptions<Item> {
+function itemsTableOptions(
+  result: Page<Item>,
+  filters: ItemFilters,
+  tagOptions: string[] = []
+): DataTableOptions<Item> {
+  const anyFilter = !!(filters.q || filters.status || filters.tags.length);
   return {
     id: "items",
     endpoint: "/items",
@@ -114,10 +128,26 @@ function itemsTableOptions(result: Page<Item>, q: string): DataTableOptions<Item
     ],
     rows: result.rows,
     rowHref: (it) => `/items/${it.id}`,
-    empty: q
-      ? "Ningún item coincide con tu búsqueda."
+    empty: anyFilter
+      ? "Ningún item coincide con los filtros."
       : "No hay items todavía.",
-    search: { value: q, placeholder: "Buscar por nombre o etiqueta…" },
+    search: { value: filters.q, placeholder: "Buscar..." },
+    filters: [
+      {
+        name: "status",
+        label: "Estado",
+        value: filters.status,
+        options: STATUS_OPTIONS,
+        anyLabel: "Todos",
+      },
+      {
+        name: "tag",
+        label: "Etiquetas",
+        multiple: true,
+        values: filters.tags,
+        options: tagOptions.map((t) => ({ value: t, label: t })),
+      },
+    ],
     pagination: {
       page: result.page,
       pageSize: result.pageSize,
@@ -126,15 +156,20 @@ function itemsTableOptions(result: Page<Item>, q: string): DataTableOptions<Item
   };
 }
 
-/** Full list page: a searchable, paginated table of the user's items. */
-export function itemsListPage(result: Page<Item>, q: string, user: User): string {
+/** Full list page: a searchable, filterable, paginated table of items. */
+export function itemsListPage(
+  result: Page<Item>,
+  filters: ItemFilters,
+  tagOptions: string[],
+  user: User
+): string {
   const actions = can(user, ITEMS_MODULE, "create")
     ? linkButton({ label: "+ Nuevo", href: "/items/new" })
     : "";
 
   const body = `
   ${pageHeader("Items", { eyebrow: "Catálogo", actions })}
-  ${dataTable(itemsTableOptions(result, q))}`;
+  ${dataTable(itemsTableOptions(result, filters, tagOptions))}`;
 
   return page({
     user,
@@ -145,9 +180,9 @@ export function itemsListPage(result: Page<Item>, q: string, user: User): string
   });
 }
 
-/** The swappable results fragment returned to HTMX search/paging requests. */
-export function itemsResults(result: Page<Item>, q: string): string {
-  return dataTableBody(itemsTableOptions(result, q));
+/** The swappable results fragment returned to HTMX search/filter/paging. */
+export function itemsResults(result: Page<Item>, filters: ItemFilters): string {
+  return dataTableBody(itemsTableOptions(result, filters));
 }
 
 /** Create page with an empty (or error-repopulated) form. */

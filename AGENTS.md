@@ -145,6 +145,13 @@ working when you touch a list:
 - **Search.** Pass `search: { value, placeholder }`. The box filters (debounced,
   via HTMX) by whatever columns the repository searches, and pushes the query to
   the URL so it's bookmarkable.
+- **Filters.** Pass `filters: [{ name, label, options, value }]` for a dropdown,
+  or `{ name, label, options, multiple: true, values }` for a multi-select chip
+  group, behind a funnel icon next to the search box. Search + filters share one
+  `<form>` so they submit together; multi-selects repeat the key (`tag=a&tag=b`),
+  read with `url.searchParams.getAll(name)`. Filter param names become
+  form-field/URL names, so keep them **trusted constants**, and bind every filter
+  *value* into the `where` clause (never interpolate it).
 - **Pagination.** Pass `pagination: { page, pageSize, total }`. Always page in
   SQL via the repository — never load a whole table into memory.
 

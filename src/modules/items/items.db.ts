@@ -1,4 +1,9 @@
-import { Repository, type Page, type PageParams } from "../../core/repository.ts";
+import {
+  Repository,
+  escapeLike,
+  type Page,
+  type PageParams,
+} from "../../core/repository.ts";
 import { db } from "../../db.ts";
 
 /** Lifecycle states an item can be in. */
@@ -20,6 +25,14 @@ export interface ItemInput {
   name: string;
   tags: string[];
   status: ItemStatus;
+}
+
+/** Query inputs for the items list: search text, filters, and paging. */
+export interface ItemListParams extends PageParams {
+  /** Exact status filter, e.g. `"active"`. Empty means "any". */
+  status?: string;
+  /** Tag filter: items matching ANY of these whole tag tokens. */
+  tags?: string[];
 }
 
 db.exec(`
@@ -50,21 +63,47 @@ export function serializeTags(tags: string[]): string {
 /** Data access for items, scoped to the owning user. */
 export class ItemRepository extends Repository {
   /**
-   * One page of the user's items, newest first, optionally filtered by a search
-   * that matches the name or any tag. Backed by the shared `paginate` helper so
-   * every module's list screen searches and pages the same way.
+   * One page of the user's items, newest first. Free-text search matches the
+   * name only; status and tag are exact-match filters. Backed by the shared
+   * `paginate` helper so every module's list screen pages the same way.
    */
-  list(userId: number, params: PageParams = {}): Page<Item> {
+  list(userId: number, params: ItemListParams = {}): Page<Item> {
+    const where = ["user_id = ?"];
+    const bind: (string | number)[] = [userId];
+    if (params.status) {
+      where.push("status = ?");
+      bind.push(params.status);
+    }
+    const tags = params.tags ?? [];
+    if (tags.length) {
+      // Match a whole tag token inside the comma-joined `tags` string; an item
+      // qualifies if it carries ANY of the selected tags (OR within the facet).
+      const ors = tags.map(() => "(',' || tags || ',') LIKE ? ESCAPE '\\'");
+      where.push(`(${ors.join(" OR ")})`);
+      for (const t of tags) bind.push(`%,${escapeLike(t)},%`);
+    }
     return this.paginate<Item>({
       from: "items",
-      where: ["user_id = ?"],
-      params: [userId],
-      searchColumns: ["name", "tags"],
+      where,
+      params: bind,
+      searchColumns: ["name"],
       q: params.q,
       orderBy: "id DESC",
       page: params.page,
       pageSize: params.pageSize,
     });
+  }
+
+  /** Distinct tag tokens across the user's items, for the filter dropdown. */
+  distinctTags(userId: number): string[] {
+    const rows = this.db
+      .query<{ tags: string }, [number]>(
+        "SELECT DISTINCT tags FROM items WHERE user_id = ? AND tags <> ''"
+      )
+      .all(userId);
+    const set = new Set<string>();
+    for (const row of rows) for (const t of parseTags(row.tags)) set.add(t);
+    return [...set].sort((a, b) => a.localeCompare(b));
   }
 
   get(id: number, userId: number): Item | null {

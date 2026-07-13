@@ -119,8 +119,28 @@ function componentStyles(): string {
        a pagination footer. Shared here so every module's list screen matches
        and so HTMX fragments (which ship no <style>) inherit these rules. */
     .data-region { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; }
+    /* Let the open filter dropdown escape the surface's rounded clip. */
+    .data-region:has(.data-filter[open]) { overflow: visible; }
     .data-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
-    .data-search { max-width: 24rem; }
+    .data-search { flex: 1; min-width: 0; }
+    .data-filter { position: relative; flex: 0 0 auto; }
+    .data-filter__toggle { display: inline-flex; align-items: center; gap: var(--space-2); list-style: none; cursor: pointer; user-select: none; }
+    .data-filter__toggle::-webkit-details-marker { display: none; }
+    .data-filter__toggle::marker { content: ""; }
+    .data-filter__icon { display: block; flex: 0 0 auto; }
+    .data-filter[open] > .data-filter__toggle { border-color: var(--text-muted); background: var(--surface-raised); }
+    .data-filter__count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.1rem; height: 1.1rem; padding: 0 0.3rem; border-radius: var(--radius-full); background: var(--accent); color: var(--on-accent); font-size: var(--font-size-2xs); font-weight: var(--font-weight-semibold); line-height: 1; }
+    .data-filter__panel { position: absolute; right: 0; top: calc(100% + var(--space-2)); z-index: 30; min-width: 18rem; max-width: min(22rem, calc(100vw - var(--space-6))); display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-4); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); }
+    .data-filter__panel .field { margin-bottom: 0; }
+    .data-filter__group { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+    .data-filter__group > .field__label { display: block; margin-bottom: var(--space-2); }
+    .data-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .data-chip { display: inline-flex; cursor: pointer; }
+    .data-chip input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; }
+    .data-chip > span { display: inline-block; padding: var(--space-1) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-full); background: var(--surface); font-size: var(--font-size-sm); line-height: 1.4; user-select: none; transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+    .data-chip > span:hover { border-color: var(--text-muted); }
+    .data-chip:has(input:checked) > span { background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: var(--accent); color: var(--accent-text); }
+    .data-chip:has(input:focus-visible) > span { outline: 2px solid var(--accent); outline-offset: 2px; }
     .data-results { display: block; }
     .data-results.htmx-request { opacity: 0.55; transition: opacity 0.12s ease; }
 
@@ -149,7 +169,7 @@ function componentStyles(): string {
          optimized view for the app's primary (mobile) usage. */
       .data-region { border: none; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
       .data-toolbar { padding: 0 0 var(--space-2); border-bottom: none; }
-      .data-search { max-width: none; }
+      .data-filter__label { display: none; }
       .data-pagination { padding: var(--space-4) 0 0; border-top: none; }
 
       .data-table-wrap { overflow-x: visible; }

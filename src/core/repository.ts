@@ -53,7 +53,7 @@ export interface PaginateOptions {
 }
 
 /** Escape LIKE wildcards so user text matches literally under `ESCAPE '\'`. */
-function escapeLike(value: string): string {
+export function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (ch) => "\\" + ch);
 }
 
