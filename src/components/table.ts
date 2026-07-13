@@ -125,7 +125,7 @@ export interface DataTableOptions<T> extends TableOptions<T> {
    */
   endpoint: string;
   search?: DataTableSearch;
-  /** Dropdown filters shown in a panel behind a filter (funnel) icon. */
+  /** Filters shown in a panel behind a filter (funnel) icon; each is a single-select dropdown or a multi-select chip group. */
   filters?: DataTableFilter[];
   pagination?: DataTablePagination;
 }

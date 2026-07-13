@@ -119,7 +119,7 @@ function componentStyles(): string {
        a pagination footer. Shared here so every module's list screen matches
        and so HTMX fragments (which ship no <style>) inherit these rules. */
     .data-region { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; }
-    /* Let the open filter dropdown escape the surface's rounded clip. */
+    /* Let the open filter panel escape the surface's rounded clip. */
     .data-region:has(.data-filter[open]) { overflow: visible; }
     .data-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
     .data-search { flex: 1; min-width: 0; }

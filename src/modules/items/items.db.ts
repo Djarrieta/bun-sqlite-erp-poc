@@ -94,7 +94,7 @@ export class ItemRepository extends Repository {
     });
   }
 
-  /** Distinct tag tokens across the user's items, for the filter dropdown. */
+  /** Distinct tag tokens across the user's items, for the tag filter. */
   distinctTags(userId: number): string[] {
     const rows = this.db
       .query<{ tags: string }, [number]>(
