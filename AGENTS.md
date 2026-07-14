@@ -49,6 +49,7 @@ bun-sqlite-erp-poc/
       card.ts           # card() surface (renders <div> or <form>)
       feedback.ts       # alert() banners + savedIndicator() / readOnlyNote()
       table.ts            # Data table; dataTable() adds search + pagination + mobile cards
+      filter.ts         # filterPanel(): reusable funnel/filter panel (dropdowns + chip groups)
       badge.ts          # Status pill
       status-map.ts     # statusMap(): shared label + badge-variant + <select> options for a status set
       calendar.ts       # calendarRegion(): generic HTMX month/week calendar (date math in core/dates.ts)

@@ -10,6 +10,7 @@
  * (below), which wraps this table in an HTMX-driven search/paging surface.
  */
 import { escapeHtml } from "./layout.ts";
+import { filterPanel, type FilterDef } from "./filter.ts";
 
 export interface Column<T> {
   header: string;
@@ -85,26 +86,11 @@ export interface DataTableSearch {
   placeholder?: string;
 }
 
-/** A filter shown in the `dataTable` filter panel (dropdown or chip group). */
-export interface DataTableFilter {
-  /**
-   * Query-string param name, e.g. `"status"`. Becomes a form-field and URL
-   * param name, so it must be a trusted, developer-supplied constant.
-   */
-  name: string;
-  /** Label shown above the control in the panel. */
-  label: string;
-  /** Selectable options. Single-select prepends a blank "any" option. */
-  options: { value: string; label: string }[];
-  /** Single-select current value, echoed back. Empty string means "any". */
-  value?: string;
-  /** Label for the blank "any" option (single-select). Defaults to `"Todos"`. */
-  anyLabel?: string;
-  /** Render as a multi-select chip group (checkboxes) instead of a dropdown. */
-  multiple?: boolean;
-  /** Multi-select current values (used when `multiple` is true). */
-  values?: string[];
-}
+/**
+ * The filters a `dataTable` shows in its panel — the shared {@link FilterDef}.
+ * See `filter.ts` for `filterPanel()`, the standalone panel usable on its own.
+ */
+export type DataTableFilter = FilterDef;
 
 /** Pagination state for `dataTable`. Omit to hide the pagination footer. */
 export interface DataTablePagination {
@@ -199,72 +185,6 @@ export function dataTableBody<T>(opts: DataTableOptions<T>): string {
   )}${paginationBar(resultsId, opts)}</div>`;
 }
 
-/** Feather "filter" (funnel) icon used on the filter toggle. */
-const FILTER_ICON = `<svg class="data-filter__icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>`;
-
-/** Whether a filter currently narrows results (a value set or any chip on). */
-function filterActive(f: DataTableFilter): boolean {
-  return f.multiple ? (f.values?.length ?? 0) > 0 : (f.value ?? "") !== "";
-}
-
-/** A single-select dropdown filter with a blank "any" option. */
-function singleFilter(f: DataTableFilter): string {
-  const options = [
-    `<option value="">${escapeHtml(f.anyLabel ?? "Todos")}</option>`,
-    ...f.options.map(
-      (o) =>
-        `<option value="${escapeHtml(o.value)}"${
-          o.value === (f.value ?? "") ? " selected" : ""
-        }>${escapeHtml(o.label)}</option>`
-    ),
-  ].join("");
-  return `<div class="field">
-    <label class="field__label" for="filter-${escapeHtml(f.name)}">${escapeHtml(
-    f.label
-  )}</label>
-    <select id="filter-${escapeHtml(f.name)}" name="${escapeHtml(
-    f.name
-  )}">${options}</select>
-  </div>`;
-}
-
-/** A multi-select filter rendered as a group of toggle chips (checkboxes). */
-function multiFilter(f: DataTableFilter): string {
-  const selected = new Set(f.values ?? []);
-  const chips = f.options.length
-    ? f.options
-        .map(
-          (o) =>
-            `<label class="data-chip">
-        <input type="checkbox" name="${escapeHtml(f.name)}" value="${escapeHtml(
-              o.value
-            )}"${selected.has(o.value) ? " checked" : ""} />
-        <span>${escapeHtml(o.label)}</span>
-      </label>`
-        )
-        .join("")
-    : `<span class="muted">Sin opciones</span>`;
-  return `<fieldset class="data-filter__group">
-    <legend class="field__label">${escapeHtml(f.label)}</legend>
-    <div class="data-chips">${chips}</div>
-  </fieldset>`;
-}
-
-/** The filter icon plus a disclosure panel holding one control per filter. */
-function filtersPanel(filters: DataTableFilter[]): string {
-  const active = filters.filter(filterActive).length;
-  const count = active ? `<span class="data-filter__count">${active}</span>` : "";
-  const fields = filters
-    .map((f) => (f.multiple ? multiFilter(f) : singleFilter(f)))
-    .join("");
-  return `<details class="data-filter">
-    <summary class="data-filter__toggle btn btn--secondary" title="Filtros" aria-label="Filtros">
-      ${FILTER_ICON}<span class="data-filter__label">Filtros</span>${count}
-    </summary>
-    <div class="data-filter__panel" role="group" aria-label="Filtros">${fields}</div>
-  </details>`;
-}
-
 /**
  * A full, reusable list surface: an optional search box and filter panel, a
  * responsive table, and a pagination footer, all wired for HTMX. Searching,
@@ -301,7 +221,7 @@ export function dataTable<T>(opts: DataTableOptions<T>): string {
           searchParam
         )}'], change from:select, change from:input[type='checkbox']">
           ${searchInput}
-          ${filters.length ? filtersPanel(filters) : ""}
+          ${filters.length ? filterPanel(filters) : ""}
         </form>`
       : "";
 
