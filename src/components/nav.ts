@@ -53,8 +53,9 @@ export function nav(user: User, currentPath = ""): string {
 
     @media (max-width: 860px) {
       .app-shell { grid-template-columns:1fr; }
-      .sidebar { position:static; height:auto; flex-direction:row; align-items:center; flex-wrap:wrap; gap:var(--space-3); border-right:none; border-bottom:1px solid var(--border); }
-      .sidebar__nav { flex-direction:row; flex-wrap:nowrap; align-items:center; order:3; flex-basis:100%; overflow-x:auto; gap:var(--space-1); }
+      .sidebar { position:static; height:auto; min-width:0; flex-direction:row; align-items:center; flex-wrap:wrap; gap:var(--space-3); border-right:none; border-bottom:1px solid var(--border); }
+      .sidebar__nav { flex-direction:row; flex-wrap:nowrap; align-items:center; order:3; flex-basis:100%; min-width:0; overflow-x:auto; gap:var(--space-1); }
+      .navlink { flex:0 0 auto; white-space:nowrap; }
       .sidebar__eyebrow { display:none; }
       .sidebar__foot { align-items:center; margin-left:auto; padding-top:0; border-top:none; }
       .app-main__inner { padding:var(--space-5) var(--space-4) var(--space-7); }

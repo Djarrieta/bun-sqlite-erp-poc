@@ -11,12 +11,15 @@ export const theme = {
 
   // Typography — a clean sans for prose/UI paired with a monospace used as the
   // "ledger" signature (IDs, roles, numeric columns, eyebrow labels).
+  // The scale is anchored on a 1rem (16px) base: form controls inherit
+  // `fontSizeBase`, and keeping it at 16px is what stops iOS Safari from
+  // auto-zooming on focus — so this base must never drop below 1rem.
   fontFamily: `"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`,
   fontMono: `ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace`,
   fontSize2xs: "0.72rem",
   fontSizeXs: "0.8rem",
   fontSizeSm: "0.9rem",
-  fontSizeBase: "0.975rem",
+  fontSizeBase: "1rem",
   fontSizeLg: "1.2rem",
   fontSizeXl: "1.6rem",
   fontSize2xl: "2.25rem",

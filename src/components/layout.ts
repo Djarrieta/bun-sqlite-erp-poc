@@ -159,8 +159,9 @@ function componentStyles(): string {
     .data-pagination__controls { display: flex; align-items: center; gap: var(--space-2); }
     .data-pagination__page { color: var(--text-muted); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
 
-    /* Small screens */
-    @media (max-width: 640px) {
+    /* Small screens: collapse in step with the nav (which becomes a top bar at
+       860px) so tables never sit in a cropped wide-format band. */
+    @media (max-width: 860px) {
       h1 { font-size: var(--font-size-lg); }
       .form-actions .btn { flex: 1 1 auto; }
 
