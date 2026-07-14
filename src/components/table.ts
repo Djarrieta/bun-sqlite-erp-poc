@@ -23,6 +23,11 @@ export interface Column<T> {
    * title (shown larger, without a label). Use it for the name/title column.
    */
   primary?: boolean;
+  /**
+   * Marks a numeric/figure column: right-aligns it and renders the value in the
+   * mono "ledger" face with tabular figures. Overrides `align`.
+   */
+  numeric?: boolean;
 }
 
 export interface TableOptions<T> {
@@ -38,10 +43,14 @@ export interface TableOptions<T> {
 export function table<T>(opts: TableOptions<T>): string {
   const { columns, rows, rowHref, empty = "No hay registros.", id } = opts;
 
+  // Numeric columns are right-aligned like a ledger; otherwise honor `align`.
+  const alignOf = (c: Column<T>): "left" | "center" | "right" =>
+    c.numeric ? "right" : c.align ?? "left";
+
   const head = columns
     .map(
       (c) =>
-        `<th style="text-align:${c.align ?? "left"}${
+        `<th style="text-align:${alignOf(c)}${
           c.width ? `;width:${c.width}` : ""
         }">${c.header}</th>`
     )
@@ -54,10 +63,16 @@ export function table<T>(opts: TableOptions<T>): string {
           .map((row) => {
             const cells = columns
               .map((c) => {
-                const cls = c.primary ? ' class="data-cell--primary"' : "";
-                return `<td${cls} data-label="${escapeHtml(
+                const cls = [
+                  c.primary ? "data-cell--primary" : "",
+                  c.numeric ? "data-cell--num" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                const clsAttr = cls ? ` class="${cls}"` : "";
+                return `<td${clsAttr} data-label="${escapeHtml(
                   c.header
-                )}" style="text-align:${c.align ?? "left"}">${c.cell(row)}</td>`;
+                )}" style="text-align:${alignOf(c)}">${c.cell(row)}</td>`;
               })
               .join("");
             const href = rowHref?.(row);
@@ -227,3 +242,56 @@ export function dataTable<T>(opts: DataTableOptions<T>): string {
 
   return `<div class="data-region">${toolbar}${dataTableBody(opts)}</div>`;
 }
+
+/**
+ * Data-table styles (surface, search header, table, pagination, and the
+ * mobile row-to-card transform), aggregated into the global stylesheet by
+ * `layout.ts` so HTMX result fragments — which ship no <style> — stay styled.
+ */
+export const tableStyles = `
+    .data-region { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden; }
+    /* Let the open filter panel escape the surface's rounded clip. */
+    .data-region:has(.data-filter[open]) { overflow: visible; }
+    .data-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
+    .data-search { flex: 1; min-width: 0; }
+    .data-results { display: block; }
+    .data-results.htmx-request { opacity: 0.55; transition: opacity 0.12s ease; }
+
+    .data-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+    .data-table th, .data-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-faint); white-space: nowrap; text-align: left; }
+    .data-table thead th { background: var(--surface-sunken); text-transform: uppercase; letter-spacing: var(--letter-spacing-wide); font-family: var(--font-mono); font-size: var(--font-size-2xs); color: var(--text-muted); font-weight: var(--font-weight-medium); border-bottom: 1px solid var(--border); }
+    .data-table tbody td { font-variant-numeric: tabular-nums; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table__row--link { cursor: pointer; }
+    .data-table__row--link:hover { background: var(--surface-sunken); }
+    .data-table__empty { text-align: center; padding: var(--space-6) 0; color: var(--text-muted); white-space: normal; }
+    /* Numeric/figure cells: the mono ledger face with tabular figures. */
+    .data-cell--num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--font-size-xs); color: var(--text); }
+
+    .data-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border); }
+    .data-pagination__info { color: var(--text-muted); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+    .data-pagination__controls { display: flex; align-items: center; gap: var(--space-2); }
+    .data-pagination__page { color: var(--text-muted); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+
+    /* Small screens: drop the outer surface chrome and let each row collapse
+       into its own stacked card of label/value pairs (the app's primary,
+       mobile-optimized list view). */
+    @media (max-width: 860px) {
+      .data-region { border: none; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
+      .data-toolbar { padding: 0 0 var(--space-2); border-bottom: none; }
+      .data-pagination { padding: var(--space-4) 0 0; border-top: none; }
+
+      .data-table-wrap { overflow-x: visible; }
+      .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+      .data-table thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+      .data-table tr { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-sm); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
+      .data-table td { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); padding: var(--space-2) 0; border-bottom: 1px solid var(--border-faint); white-space: normal; text-align: right; }
+      .data-table td:last-child { border-bottom: none; }
+      .data-table td::before { content: attr(data-label); flex: 0 0 auto; font-family: var(--font-mono); font-size: var(--font-size-2xs); letter-spacing: var(--letter-spacing-wide); text-transform: uppercase; color: var(--text-muted); text-align: left; }
+      .data-table td[data-label=""]::before { display: none; }
+      .data-table td.data-cell--primary { justify-content: flex-start; font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); text-align: left; }
+      .data-table td.data-cell--primary::before { display: none; }
+      .data-table td.data-table__empty { justify-content: center; text-align: center; }
+      .data-table td.data-table__empty::before { display: none; }
+    }`;

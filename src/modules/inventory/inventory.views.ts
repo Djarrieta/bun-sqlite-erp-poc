@@ -67,7 +67,7 @@ function inventoryTableOptions(
         header: "Cantidad",
         cell: (r) => `<strong>${r.quantity}</strong>`,
         width: "120px",
-        align: "right",
+        numeric: true,
       },
     ],
     rows: result.rows,

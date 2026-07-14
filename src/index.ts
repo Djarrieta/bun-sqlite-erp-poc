@@ -33,6 +33,26 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     const { pathname } = url;
+
+    // --- Static assets: self-hosted fonts ------------------------------
+    // Public and served before the auth guard so the login page is styled
+    // too. The strict filename check blocks path traversal.
+    if (req.method === "GET" && pathname.startsWith("/fonts/")) {
+      const name = pathname.slice("/fonts/".length);
+      if (/^[a-z0-9-]+\.woff2$/.test(name)) {
+        const file = Bun.file(`public/fonts/${name}`);
+        if (await file.exists()) {
+          return new Response(file, {
+            headers: {
+              "content-type": "font/woff2",
+              "cache-control": "public, max-age=31536000, immutable",
+            },
+          });
+        }
+      }
+      return notFound();
+    }
+
     const user = authService.getUserFromRequest(req);
 
     // --- Public auth routes (login/logout/forgot/reset) ----------------

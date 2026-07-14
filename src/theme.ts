@@ -15,7 +15,12 @@ export const theme = {
   // `fontSizeBase`, and keeping it at 16px is what stops iOS Safari from
   // auto-zooming on focus — so this base must never drop below 1rem.
   fontFamily: `"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`,
-  fontMono: `ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace`,
+  // Display face for titles: a technical grotesk used with restraint (the one
+  // deliberate type risk), distinct from the neutral body sans.
+  fontDisplay: `"Space Grotesk", "Inter", system-ui, sans-serif`,
+  // The "ledger" face: a chosen monospace (not whatever the OS ships) for IDs,
+  // figures, roles and eyebrow labels — the app's numeric signature.
+  fontMono: `"JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace`,
   fontSize2xs: "0.72rem",
   fontSizeXs: "0.8rem",
   fontSizeSm: "0.9rem",
@@ -92,6 +97,7 @@ export function themeVars(): string {
   return `:root {
     color-scheme: ${theme.colorScheme};
     --font-family: ${theme.fontFamily};
+    --font-display: ${theme.fontDisplay};
     --font-mono: ${theme.fontMono};
     --font-size-2xs: ${theme.fontSize2xs};
     --font-size-xs: ${theme.fontSizeXs};

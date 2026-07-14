@@ -64,3 +64,29 @@ export function linkButton(opts: LinkButtonOptions): string {
     attrs ? " " + attrs : ""
   }>${label}</a>`;
 }
+
+/**
+ * Button styles, aggregated into the global stylesheet by `layout.ts` so both
+ * full pages and HTMX fragments render actions consistently.
+ */
+export const buttonStyles = `
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+      padding: var(--control-pad-y) var(--control-pad-x);
+      font-family: inherit; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-tight);
+      border: 1px solid transparent; border-radius: var(--radius);
+      background: transparent; color: inherit; text-decoration: none; cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+    .btn--primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sm); }
+    .btn--primary:hover { background: var(--accent-hover); }
+    .btn--secondary { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+    .btn--secondary:hover { background: var(--surface-raised); border-color: var(--text-muted); }
+    .btn--danger { border-color: color-mix(in srgb, var(--danger) 40%, transparent); color: var(--danger); }
+    .btn--danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+    .btn--sm { padding: var(--space-1) var(--space-2); font-size: var(--font-size-xs); }
+    .btn--block { width: 100%; }`;

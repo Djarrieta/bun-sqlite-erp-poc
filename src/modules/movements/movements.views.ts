@@ -349,7 +349,7 @@ export function movementLinesFragment(
       header: "Cantidad",
       cell: (l: MovementLineRow) => `<strong>${l.quantity}</strong>`,
       width: "110px",
-      align: "right" as const,
+      numeric: true,
     },
   ];
   if (editable) {
@@ -546,7 +546,7 @@ function draftTools(movement: Movement, user: User): string {
 
   const picker = canUpdate
     ? card(
-        `<h2 class="page-head__title" style="font-size:var(--font-size-lg)">Agregar items</h2>
+        `<h2 class="page-head__title page-head__title--sub">Agregar items</h2>
         <input class="data-search" type="search" name="q" placeholder="Buscar item por id o nombre..."
           autocomplete="off" aria-label="Buscar item"
           hx-get="/movements/${movement.id}/lines/search"
@@ -559,7 +559,7 @@ function draftTools(movement: Movement, user: User): string {
 
   const importer = canCreate
     ? card(
-        `<h2 class="page-head__title" style="font-size:var(--font-size-lg)">Importar CSV</h2>
+        `<h2 class="page-head__title page-head__title--sub">Importar CSV</h2>
         <p class="muted">Formato: <code>item_id;name;quantity</code> (cabecera obligatoria).</p>
         <form class="movement-import" hx-post="/movements/${movement.id}/import"
           hx-target="#movement-lines" hx-swap="outerHTML" hx-encoding="multipart/form-data">

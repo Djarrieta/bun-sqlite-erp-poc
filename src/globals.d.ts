@@ -14,6 +14,11 @@ declare const Bun: {
     port?: number;
     fetch(req: Request): Response | Promise<Response>;
   }): { port: number };
+  file(path: string | URL): Blob & { exists(): Promise<boolean> };
+  write(
+    destination: string | URL,
+    input: string | Uint8Array | ArrayBuffer | Blob
+  ): Promise<number>;
   password: {
     hash(
       password: string,

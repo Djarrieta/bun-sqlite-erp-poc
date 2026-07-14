@@ -188,3 +188,48 @@ export function chipGroup(opts: {
     <div class="data-chips">${chips}</div>
   </fieldset>`;
 }
+
+/**
+ * Form-control styles, aggregated into the global stylesheet by `layout.ts`.
+ * Includes the multi-select chip styles shared by `chipGroup()` and the
+ * data-table filter panel.
+ */
+export const formStyles = `
+    input, select, textarea {
+      width: 100%;
+      padding: var(--control-pad-y) var(--control-pad-x);
+      font-family: inherit;
+      font-size: var(--font-size-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface-sunken);
+      color: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+    input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 0.8; }
+    textarea { resize: vertical; min-height: 5rem; }
+    .field { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-3); }
+    .field__label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
+    .field__hint { color: var(--text-muted); font-weight: var(--font-weight-normal); }
+    .field__error { color: var(--danger); font-size: var(--font-size-xs); }
+    .form-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-top: var(--space-4); }
+
+    /* Multi-select chips (shared by chipGroup() and the filter panel). */
+    .data-filter__group { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+    .data-filter__group > .field__label { display: block; margin-bottom: var(--space-2); }
+    .data-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .data-chip { display: inline-flex; cursor: pointer; }
+    .data-chip input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; }
+    .data-chip > span { display: inline-block; padding: var(--space-1) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-full); background: var(--surface); font-size: var(--font-size-sm); line-height: 1.4; user-select: none; transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+    .data-chip > span:hover { border-color: var(--text-muted); }
+    .data-chip:has(input:checked) > span { background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: var(--accent); color: var(--accent-text); }
+    .data-chip:has(input:focus-visible) > span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    @media (max-width: 860px) {
+      .form-actions .btn { flex: 1 1 auto; }
+    }`;

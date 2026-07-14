@@ -133,7 +133,7 @@ function itemsTableOptions(
     id: "items",
     endpoint: "/items",
     columns: [
-      { header: "ID", cell: (it) => String(it.id), width: "64px" },
+      { header: "ID", cell: (it) => String(it.id), width: "64px", numeric: true },
       {
         header: "Nombre",
         cell: (it) => {

@@ -20,3 +20,8 @@ export function card(content: string, opts: CardOptions = {}): string {
     opts.attrs ? " " + opts.attrs : ""
   }>${content}</${tag}>`;
 }
+
+/** Card surface styles, aggregated into the global stylesheet by `layout.ts`. */
+export const cardStyles = `
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-sm); }
+    .card--flush { padding: 0; overflow: hidden; }`;

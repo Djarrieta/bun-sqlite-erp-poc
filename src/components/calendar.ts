@@ -22,6 +22,63 @@ import {
   weekTitle,
 } from "../core/dates.ts";
 
+/**
+ * Calendar styles (month grid, week columns, and the mobile agenda),
+ * aggregated into the global stylesheet by `layout.ts`. Structural only —
+ * item-chip colors are supplied by the calling module via `renderItem`.
+ */
+export const calendarStyles = `
+    .cal-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+    .cal-nav, .cal-views { display: flex; gap: var(--space-2); }
+    .cal-title { flex: 1 1 auto; text-align: center; margin: 0; font-family: var(--font-display); font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); letter-spacing: -0.01em; }
+    .cal-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-1); margin-bottom: var(--space-1); }
+    .cal-weekday { text-align: center; padding: var(--space-1) 0; font-family: var(--font-mono); font-size: var(--font-size-2xs); letter-spacing: var(--letter-spacing-wide); text-transform: uppercase; color: var(--text-muted); }
+    .cal-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-1); }
+    .cal-cell { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; min-height: 6.5rem; padding: var(--space-1); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+    .cal-cell--muted { background: var(--surface-sunken); }
+    .cal-cell--today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .cal-cell__head { display: flex; justify-content: flex-end; }
+    .cal-daynum { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--text); text-decoration: none; }
+    .cal-daynum:hover { background: var(--surface-raised); }
+    .cal-cell--muted .cal-daynum { color: var(--text-muted); }
+    .cal-cell--today .cal-daynum { background: var(--accent); color: var(--on-accent); }
+    .cal-cell__events { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow: hidden; }
+    .cal-chip { display: block; overflow: hidden; padding: 2px var(--space-1); border-left: 3px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-sunken); color: var(--text); font-size: var(--font-size-2xs); line-height: 1.35; text-decoration: none; white-space: nowrap; text-overflow: ellipsis; }
+    .cal-chip:hover { background: var(--surface-raised); }
+    .cal-more { padding: 0 var(--space-1); color: var(--text-muted); font-size: var(--font-size-2xs); text-decoration: none; }
+    .cal-more:hover { color: var(--text); }
+    .cal-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-2); }
+    .cal-daycol { display: flex; flex-direction: column; min-width: 0; min-height: 8rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+    .cal-daycol--today { border-color: var(--accent); }
+    .cal-daycol__head { display: block; padding: var(--space-2); text-align: center; background: var(--surface-sunken); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); text-decoration: none; }
+    .cal-daycol__head:hover { background: var(--surface-raised); }
+    .cal-daycol--today .cal-daycol__head { background: var(--accent); color: var(--on-accent); }
+    .cal-daycol__events { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2); }
+    .cal-week .cal-chip { white-space: normal; }
+    .cal-empty { padding: var(--space-2); text-align: center; color: var(--text-muted); text-decoration: none; border: 1px dashed var(--border); border-radius: var(--radius); }
+    .cal-empty:hover { color: var(--text); border-color: var(--text-muted); }
+    .cal-agenda { display: none; }
+    .cal-agenda__day { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+    .cal-agenda__day--today { border-color: var(--accent); }
+    .cal-agenda__head { display: block; padding: var(--space-2) var(--space-3); background: var(--surface-sunken); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); text-decoration: none; }
+    .cal-agenda__head:hover { background: var(--surface-raised); }
+    .cal-agenda__day--today .cal-agenda__head { background: var(--accent); color: var(--on-accent); }
+    .cal-agenda__events { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) var(--space-3); }
+    .cal-agenda .cal-chip { white-space: normal; }
+
+    /* Calendar title drops to its own full-width row above the controls. */
+    @media (max-width: 860px) {
+      .cal-title { order: -1; flex-basis: 100%; }
+    }
+
+    /* Phones: swap the 7-column month grid for the full-width agenda (no
+       truncation), and stack the week's day columns. */
+    @media (max-width: 640px) {
+      .cal-weekdays, .cal-days { display: none; }
+      .cal-agenda { display: flex; flex-direction: column; gap: var(--space-2); }
+      .cal-week { grid-template-columns: 1fr; }
+    }`;
+
 export type CalendarView = "month" | "week";
 
 /** Narrow an untrusted query value to a `CalendarView`. */

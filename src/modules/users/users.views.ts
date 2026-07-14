@@ -70,7 +70,7 @@ function deleteCell(u: User, currentUser: User): string {
 export function usersTableFragment(users: User[], currentUser: User): string {
   return `<div id="users-table">${table<User>({
     columns: [
-      { header: "ID", cell: (u) => String(u.id), width: "56px" },
+      { header: "ID", cell: (u) => String(u.id), width: "56px", numeric: true },
       { header: "Correo", cell: (u) => escapeHtml(u.email) },
       { header: "Rol", cell: (u) => roleBadge(u.role), width: "150px" },
       { header: "Creado", cell: (u) => formatDate(u.created_at), width: "120px" },

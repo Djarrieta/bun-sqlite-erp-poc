@@ -65,3 +65,17 @@ export function pageHeader(title: string, opts: PageHeaderOptions = {}): string 
 export function backLink(href: string, label: string): string {
   return `<a class="back-link" href="${href}">${label}</a>`;
 }
+
+/**
+ * Page-header + back-link styles, aggregated into the global stylesheet by
+ * `layout.ts`. The title carries the display face — the app's one type accent.
+ */
+export const pageHeaderStyles = `
+    .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-6); }
+    .page-head__eyebrow { display: block; font-family: var(--font-mono); font-size: var(--font-size-2xs); letter-spacing: var(--letter-spacing-wide); text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-1); }
+    .page-head__title { margin: 0; text-align: left; font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); letter-spacing: -0.02em; }
+    .page-head__title--sub { font-size: var(--font-size-lg); letter-spacing: -0.01em; }
+    .page-head__sub { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+    .page-head__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+    .back-link { display: inline-flex; align-items: center; gap: var(--space-1); margin-bottom: var(--space-4); font-size: var(--font-size-sm); color: var(--text-muted); text-decoration: none; }
+    .back-link:hover { color: var(--text); }`;

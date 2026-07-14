@@ -84,3 +84,20 @@ export function filterPanel(filters: FilterDef[]): string {
     <div class="data-filter__panel" role="group" aria-label="Filtros">${fields}</div>
   </details>`;
 }
+
+/** Filter (funnel) panel styles, aggregated into the global stylesheet by
+ *  `layout.ts`. The chip styles it reuses live with the form component. */
+export const filterStyles = `
+    .data-filter { position: relative; flex: 0 0 auto; }
+    .data-filter__toggle { display: inline-flex; align-items: center; gap: var(--space-2); list-style: none; cursor: pointer; user-select: none; }
+    .data-filter__toggle::-webkit-details-marker { display: none; }
+    .data-filter__toggle::marker { content: ""; }
+    .data-filter__icon { display: block; flex: 0 0 auto; }
+    .data-filter[open] > .data-filter__toggle { border-color: var(--text-muted); background: var(--surface-raised); }
+    .data-filter__count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.1rem; height: 1.1rem; padding: 0 0.3rem; border-radius: var(--radius-full); background: var(--accent); color: var(--on-accent); font-size: var(--font-size-2xs); font-weight: var(--font-weight-semibold); line-height: 1; }
+    .data-filter__panel { position: absolute; right: 0; top: calc(100% + var(--space-2)); z-index: 30; min-width: 18rem; max-width: min(22rem, calc(100vw - var(--space-6))); display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-4); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); }
+    .data-filter__panel .field { margin-bottom: 0; }
+
+    @media (max-width: 860px) {
+      .data-filter__label { display: none; }
+    }`;

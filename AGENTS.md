@@ -41,7 +41,7 @@ bun-sqlite-erp-poc/
     views.ts            # Dashboard page for "/"
     globals.d.ts        # Ambient Bun / bun:sqlite type declarations
     components/         # Presentation-only, reusable building blocks
-      layout.ts         # HTML document shell + centralized component CSS, HTMX_SCRIPT, escapeHtml
+      layout.ts         # HTML document shell; @font-face + aggregates each component's styles, HTMX_SCRIPT, escapeHtml
       page.ts           # page() shell (nav + layout), pageHeader(), backLink()
       nav.ts            # Permission-aware top navigation
       button.ts         # button() / linkButton() with variants + sizes
@@ -104,16 +104,20 @@ and a nav entry.
 - **Theming:** all colors, spacing, typography, and radii live in
   `src/theme.ts` and are exposed as CSS custom properties. Components
   and views must reference them via `var(--token)` — **never hardcode hex colors
-  or other design values inside a component or view.**
+  or other design values inside a component or view.** Fonts are self-hosted in
+  `public/fonts/` (variable woff2, served by `index.ts`) and declared with
+  `@font-face` in `layout.ts`; run `bun fonts` to refresh them.
 - **UI composition:** build screens from the shared components in
   `src/components/` — render authenticated pages with `page()` (nav + shell),
   and use `pageHeader()`, `card()`, `textField()`/`selectField()`/`textareaField()`,
   `chipGroup()`, `button()`/`linkButton()`, `table()`/`dataTable()`, `badge()`
   and `alert()` instead of hand-writing markup. For a set of related statuses
   (status/kind/role) build one `statusMap()` for its label + badge + options;
-  for month/week calendars use `calendarRegion()`. Their styles are centralized
-  in `layout.ts`, so a new module should need little or no CSS of its own (only
-  truly module-specific bits belong in a small `PAGE_STYLES`). See **Building
+  for month/week calendars use `calendarRegion()`. Each component owns its CSS
+  (exported as a `<name>Styles` const beside its markup) and `layout.ts`
+  aggregates them into one global stylesheet, so a new module should need little
+  or no CSS of its own (only truly module-specific bits belong in a small
+  `PAGE_STYLES`). See **Building
   list screens** for tables that need search and pagination.
 - **Permissions:** gate every capability in **both** places — hide the control
   in the view **and** return `forbidden()` in the route. The matrix in
@@ -181,8 +185,9 @@ Wire a new list module in three steps (copy the `items` module's shape):
    (fragment) so the two render identically.
 
 Do **not** re-add per-component `<style>` for tables: all data-table, search and
-pagination CSS lives in `layout.ts` so HTMX fragments (which ship no styles)
-stay styled.
+pagination CSS lives beside the component in `table.ts` (its exported
+`tableStyles`, aggregated globally by `layout.ts`) so HTMX fragments (which ship
+no styles) stay styled.
 
 ## The auth module (special case)
 

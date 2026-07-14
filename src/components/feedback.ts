@@ -31,3 +31,17 @@ export function readOnlyNote(
 ): string {
   return canEdit ? "" : `<p class="muted">${escapeHtml(message)}</p>`;
 }
+
+/**
+ * Alert + inline-feedback styles, aggregated into the global stylesheet by
+ * `layout.ts`. Includes the shared `.muted` / `.saved` text utilities used by
+ * `readOnlyNote()` and `savedIndicator()`.
+ */
+export const feedbackStyles = `
+    .alert { padding: var(--space-2) var(--space-3); border-radius: var(--radius); font-size: var(--font-size-sm); border: 1px solid transparent; margin: 0 0 var(--space-3); }
+    .alert--error { background: color-mix(in srgb, var(--danger) 13%, transparent); border-color: color-mix(in srgb, var(--danger) 33%, transparent); color: var(--danger); }
+    .alert--success { background: color-mix(in srgb, var(--success) 13%, transparent); border-color: color-mix(in srgb, var(--success) 33%, transparent); color: var(--success-text); }
+    .alert--info { background: color-mix(in srgb, var(--accent) 13%, transparent); border-color: color-mix(in srgb, var(--accent) 33%, transparent); color: var(--accent-text); }
+    .alert--warning { background: color-mix(in srgb, var(--warning) 15%, transparent); border-color: color-mix(in srgb, var(--warning) 35%, transparent); color: var(--warning); }
+    .muted { color: var(--text-muted); font-size: var(--font-size-sm); }
+    .saved { color: var(--success); font-size: var(--font-size-sm); }`;
