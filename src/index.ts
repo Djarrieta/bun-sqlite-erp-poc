@@ -8,6 +8,7 @@ import { itemsModule } from "./modules/items/index.ts";
 import { locationsModule } from "./modules/locations/index.ts";
 import { inventoryModule } from "./modules/inventory/index.ts";
 import { movementsModule } from "./modules/movements/index.ts";
+import { eventsModule } from "./modules/events/index.ts";
 import { usersModule } from "./modules/users/index.ts";
 
 const PORT = Number(process.env.PORT ?? 4000);
@@ -20,6 +21,7 @@ registerModule(router, itemsModule);
 registerModule(router, locationsModule);
 registerModule(router, inventoryModule);
 registerModule(router, movementsModule);
+registerModule(router, eventsModule);
 registerModule(router, usersModule);
 registerModule(router, authModule);
 

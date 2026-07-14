@@ -4,10 +4,12 @@ import "../modules/items/items.db.ts";
 import "../modules/locations/locations.db.ts";
 import "../modules/inventory/inventory.db.ts";
 import "../modules/movements/movements.db.ts";
+import "../modules/events/events.db.ts";
 import { seedItems } from "../modules/items/items.seed.ts";
 import { seedUsers } from "../modules/users/users.seed.ts";
 import { seedLocations } from "../modules/locations/locations.seed.ts";
 import { seedMovements } from "../modules/movements/movements.seed.ts";
+import { seedEvents } from "../modules/events/events.seed.ts";
 
 /**
  * Populate the database from each module's `*.seed.ts` file. Seeds run in
@@ -22,4 +24,5 @@ await seedUsers();
 seedItems();
 seedLocations();
 seedMovements();
+seedEvents();
 console.log("✅ Seed complete.");
