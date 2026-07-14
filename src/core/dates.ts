@@ -1,14 +1,12 @@
 /**
- * Pure date + grid helpers for the events calendar view. No HTML lives here —
- * `events.views.ts` renders these structures. Weeks are Monday-first (es locale)
- * and all dates are handled in the server's local time, matching how event
- * `start_at` values (`YYYY-MM-DDTHH:MM`, from `datetime-local`) are stored.
+ * Framework-agnostic date helpers: Spanish month/weekday names, calendar-grid
+ * math (Monday-first weeks, local time) and small display formatters. No HTML
+ * lives here — components render these values. Dates are handled in the
+ * server's local time, matching how stored `YYYY-MM-DDTHH:MM` values (from
+ * `datetime-local`) are read back.
  */
-import type { Event } from "./events.db.ts";
 
-export type CalendarView = "month" | "week";
-
-const MONTHS_ES = [
+export const MONTHS_ES = [
   "Enero",
   "Febrero",
   "Marzo",
@@ -23,7 +21,7 @@ const MONTHS_ES = [
   "Diciembre",
 ];
 
-const MONTHS_ES_SHORT = [
+export const MONTHS_ES_SHORT = [
   "Ene",
   "Feb",
   "Mar",
@@ -42,7 +40,7 @@ const MONTHS_ES_SHORT = [
 export const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 /** Drop the time part, returning local midnight of the same day. */
-function atMidnight(d: Date): Date {
+export function atMidnight(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
@@ -60,11 +58,6 @@ export function parseAnchor(dateStr?: string | null): Date {
 export function toISODate(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-/** Narrow an untrusted query value to a `CalendarView`. */
-export function isValidView(v: string | null | undefined): v is CalendarView {
-  return v === "month" || v === "week";
 }
 
 export function addDays(d: Date, n: number): Date {
@@ -112,38 +105,6 @@ export function weekDays(anchor: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
-/** ISO date window `[start, endExclusive)` covering the visible grid. */
-export function rangeFor(
-  view: CalendarView,
-  anchor: Date
-): { start: string; endExclusive: string } {
-  if (view === "week") {
-    const start = startOfWeekMonday(anchor);
-    return {
-      start: toISODate(start),
-      endExclusive: toISODate(addDays(start, 7)),
-    };
-  }
-  const weeks = monthGrid(anchor);
-  const first = weeks[0]![0]!;
-  const last = weeks[5]![6]!;
-  return { start: toISODate(first), endExclusive: toISODate(addDays(last, 1)) };
-}
-
-/** ISO anchor for the previous month/week. */
-export function prevAnchor(view: CalendarView, anchor: Date): string {
-  return view === "week"
-    ? toISODate(addDays(startOfWeekMonday(anchor), -7))
-    : toISODate(addMonths(anchor, -1));
-}
-
-/** ISO anchor for the next month/week. */
-export function nextAnchor(view: CalendarView, anchor: Date): string {
-  return view === "week"
-    ? toISODate(addDays(startOfWeekMonday(anchor), 7))
-    : toISODate(addMonths(anchor, 1));
-}
-
 /** Full-month title, e.g. "Julio 2026". */
 export function monthTitle(anchor: Date): string {
   return `${MONTHS_ES[anchor.getMonth()]} ${anchor.getFullYear()}`;
@@ -174,14 +135,24 @@ export function agendaDayLabel(d: Date): string {
   return `${weekdayLabel(d)} ${d.getDate()} ${MONTHS_ES_SHORT[d.getMonth()]}`;
 }
 
-/** Group events by their start day (`YYYY-MM-DD`), preserving input order. */
-export function groupByDay(events: Event[]): Map<string, Event[]> {
-  const byDay = new Map<string, Event[]>();
-  for (const event of events) {
-    const key = event.start_at.slice(0, 10);
-    const list = byDay.get(key);
-    if (list) list.push(event);
-    else byDay.set(key, [event]);
-  }
-  return byDay;
+// --- Display formatters -----------------------------------------------------
+// These operate on stored strings (`YYYY-MM-DD` / `YYYY-MM-DDTHH:MM`), not
+// Date objects, and never touch HTML, so their output is safe to interpolate.
+
+/** Date part `YYYY-MM-DD` of a stored value (empty → ""). */
+export function formatDate(value: string): string {
+  return (value ?? "").slice(0, 10);
+}
+
+/** `HH:MM` time part of a stored `YYYY-MM-DDTHH:MM[...]` value (empty → ""). */
+export function formatTime(value: string): string {
+  return (value.split("T")[1] ?? "").slice(0, 5);
+}
+
+/** Render a stored datetime as "YYYY-MM-DD · HH:MM" (date-only when no time; "—" when empty). */
+export function formatDateTime(value: string): string {
+  if (!value) return "—";
+  const [date, time = ""] = value.split("T");
+  const hm = time.slice(0, 5);
+  return hm ? `${date} · ${hm}` : date;
 }

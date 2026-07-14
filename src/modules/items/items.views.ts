@@ -15,28 +15,21 @@ import {
   formActions,
   button,
   linkButton,
+  statusMap,
+  savedIndicator,
+  readOnlyNote,
 } from "../../components/index.ts";
 import type { Page } from "../../core/repository.ts";
 import { can } from "../../core/permissions.ts";
 import { parseTags, type Item, type ItemStatus } from "./items.db.ts";
 import { ITEMS_MODULE, ITEM_STATUSES } from "./items.rules.ts";
 
-const STATUS_VARIANT: Record<ItemStatus, BadgeVariant> = {
-  draft: "warning",
-  active: "success",
-  archived: "neutral",
-};
-
-const STATUS_LABEL: Record<ItemStatus, string> = {
-  draft: "Borrador",
-  active: "Activo",
-  archived: "Archivado",
-};
-
-const STATUS_OPTIONS = ITEM_STATUSES.map((s) => ({
-  value: s,
-  label: STATUS_LABEL[s],
-}));
+const STATUS = statusMap<ItemStatus>({
+  labels: { draft: "Borrador", active: "Activo", archived: "Archivado" },
+  variants: { draft: "warning", active: "success", archived: "neutral" },
+  order: ITEM_STATUSES,
+});
+const STATUS_OPTIONS = STATUS.options;
 
 /** Yes/No options for the boolean "unique" flag (no checkbox component). */
 const BOOL_OPTIONS = [
@@ -52,7 +45,7 @@ interface FormValues {
 }
 
 function statusBadge(status: ItemStatus): string {
-  return badge(STATUS_LABEL[status] ?? status, STATUS_VARIANT[status] ?? "neutral");
+  return STATUS.badge(status);
 }
 
 /** A small pill flagging one-of-a-kind items in lists and headers. */
@@ -71,7 +64,6 @@ function tagChips(tags: string): string {
 /** Only item-specific bits; surfaces, controls and buttons come from the base styles. */
 const PAGE_STYLES = `
   .tag-chip { display:inline-block; padding:var(--space-1) var(--space-2); border-radius:var(--radius); background:color-mix(in srgb, var(--accent) 10%, transparent); font-size:var(--font-size-xs); }
-  .saved { color:var(--success); font-size:var(--font-size-sm); }
 `;
 
 /** The name/tags/status fields, shared by the create and edit forms. */
@@ -269,10 +261,8 @@ export function itemFormFragment(
         attrs: `hx-delete="/items/${item.id}" hx-confirm="¿Eliminar este item?"`,
       })
     : "";
-  const savedMsg = opts.saved ? `<span class="saved">✓ Guardado</span>` : "";
-  const readonlyNote = !canUpdate
-    ? `<p class="muted">Tienes acceso de solo lectura.</p>`
-    : "";
+  const savedMsg = savedIndicator(!!opts.saved);
+  const readonlyNote = readOnlyNote(canUpdate);
 
   const formBody = `
     ${readonlyNote}

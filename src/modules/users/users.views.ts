@@ -1,8 +1,6 @@
 import type { User } from "../auth/auth.db.ts";
 import {
   escapeHtml,
-  badge,
-  type BadgeVariant,
   table,
   page,
   pageHeader,
@@ -14,38 +12,36 @@ import {
   button,
   linkButton,
   alert,
+  statusMap,
 } from "../../components/index.ts";
+import { formatDate } from "../../core/dates.ts";
 import type { Role } from "../../core/permissions.ts";
 import { USER_ROLES } from "./users.rules.ts";
 
-const ROLE_VARIANT: Record<string, BadgeVariant> = {
-  admin: "info",
-  sales: "success",
-  financial: "warning",
-  engineer: "neutral",
-  logistic: "danger",
-  member: "neutral",
-};
-const ROLE_LABEL: Record<string, string> = {
-  admin: "Administrador",
-  sales: "Ventas",
-  financial: "Finanzas",
-  engineer: "Ingeniería",
-  logistic: "Logística",
-  member: "Miembro",
-};
+const ROLE = statusMap<Role>({
+  labels: {
+    admin: "Administrador",
+    sales: "Ventas",
+    financial: "Finanzas",
+    engineer: "Ingeniería",
+    logistic: "Logística",
+    member: "Miembro",
+  },
+  variants: {
+    admin: "info",
+    sales: "success",
+    financial: "warning",
+    engineer: "neutral",
+    logistic: "danger",
+    member: "neutral",
+  },
+  order: USER_ROLES,
+});
 
-const ROLE_OPTIONS = USER_ROLES.map((r) => ({
-  value: r,
-  label: ROLE_LABEL[r] ?? r,
-}));
+const ROLE_OPTIONS = ROLE.options;
 
 function roleBadge(role: string): string {
-  return badge(ROLE_LABEL[role] ?? role, ROLE_VARIANT[role] ?? "neutral");
-}
-
-function fmtDate(value: string): string {
-  return escapeHtml((value ?? "").slice(0, 10));
+  return ROLE.badge(role);
 }
 
 function deleteCell(u: User, currentUser: User): string {
@@ -77,7 +73,7 @@ export function usersTableFragment(users: User[], currentUser: User): string {
       { header: "ID", cell: (u) => String(u.id), width: "56px" },
       { header: "Correo", cell: (u) => escapeHtml(u.email) },
       { header: "Rol", cell: (u) => roleBadge(u.role), width: "150px" },
-      { header: "Creado", cell: (u) => fmtDate(u.created_at), width: "120px" },
+      { header: "Creado", cell: (u) => formatDate(u.created_at), width: "120px" },
       {
         header: "",
         cell: (u) => deleteCell(u, currentUser),

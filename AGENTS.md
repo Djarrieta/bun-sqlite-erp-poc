@@ -45,17 +45,20 @@ bun-sqlite-erp-poc/
       page.ts           # page() shell (nav + layout), pageHeader(), backLink()
       nav.ts            # Permission-aware top navigation
       button.ts         # button() / linkButton() with variants + sizes
-      form.ts           # textField() / selectField() / formActions()
+      form.ts           # textField() / selectField() / textareaField() / chip() / chipGroup() / formActions()
       card.ts           # card() surface (renders <div> or <form>)
-      feedback.ts       # alert() banners (error / success / info / warning)
+      feedback.ts       # alert() banners + savedIndicator() / readOnlyNote()
       table.ts            # Data table; dataTable() adds search + pagination + mobile cards
       badge.ts          # Status pill
+      status-map.ts     # statusMap(): shared label + badge-variant + <select> options for a status set
+      calendar.ts       # calendarRegion(): generic HTMX month/week calendar (date math in core/dates.ts)
     core/               # Framework-style plumbing (no feature logic)
       http.ts           # html / redirect / notFound / forbidden helpers
       router.ts         # Tiny ":param" router + RouteContext
       modules.ts        # AppModule base class + registerModule / getModules
       permissions.ts    # can() / registerPermissions + Role & Action types
       repository.ts       # Repository base: shared db + paginate() (search + pagination)
+      dates.ts          # Date math (month/week grids, Monday-first) + display formatters
     modules/            # Feature modules, one folder per module (see "Module anatomy")
 ```
 
@@ -103,12 +106,14 @@ and a nav entry.
   or other design values inside a component or view.**
 - **UI composition:** build screens from the shared components in
   `src/components/` — render authenticated pages with `page()` (nav + shell),
-  and use `pageHeader()`, `card()`, `textField()`/`selectField()`,
-  `button()`/`linkButton()`, `table()`/`dataTable()`, `badge()` and `alert()`
-  instead of hand-writing markup. Their styles are centralized in `layout.ts`,
-  so a new module should need little or no CSS of its own (only truly
-  module-specific bits belong in a small `PAGE_STYLES`). See **Building list
-  screens** for tables that need search and pagination.
+  and use `pageHeader()`, `card()`, `textField()`/`selectField()`/`textareaField()`,
+  `chipGroup()`, `button()`/`linkButton()`, `table()`/`dataTable()`, `badge()`
+  and `alert()` instead of hand-writing markup. For a set of related statuses
+  (status/kind/role) build one `statusMap()` for its label + badge + options;
+  for month/week calendars use `calendarRegion()`. Their styles are centralized
+  in `layout.ts`, so a new module should need little or no CSS of its own (only
+  truly module-specific bits belong in a small `PAGE_STYLES`). See **Building
+  list screens** for tables that need search and pagination.
 - **Permissions:** gate every capability in **both** places — hide the control
   in the view **and** return `forbidden()` in the route. The matrix in
   `<name>.rules.ts` (keyed by role) is the single source of truth.

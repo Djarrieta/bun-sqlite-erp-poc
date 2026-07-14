@@ -12,9 +12,9 @@ import { EVENTS_MODULE, parseEventForm } from "./events.rules.ts";
 import {
   type CalendarView,
   isValidView,
-  parseAnchor,
   rangeFor,
-} from "./events.calendar.ts";
+} from "../../components/index.ts";
+import { parseAnchor } from "../../core/dates.ts";
 import {
   EMPTY_EVENT_FORM,
   eventDetailPage,

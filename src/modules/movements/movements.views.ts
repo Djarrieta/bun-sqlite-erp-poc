@@ -2,7 +2,6 @@ import type { User } from "../auth/auth.db.ts";
 import {
   escapeHtml,
   badge,
-  type BadgeVariant,
   alert,
   dataTable,
   dataTableBody,
@@ -13,9 +12,12 @@ import {
   backLink,
   card,
   selectField,
+  textareaField,
   formActions,
   button,
   linkButton,
+  statusMap,
+  savedIndicator,
 } from "../../components/index.ts";
 import type { Page } from "../../core/repository.ts";
 import { can } from "../../core/permissions.ts";
@@ -32,37 +34,19 @@ import {
   MOVEMENT_STATUSES,
 } from "./movements.rules.ts";
 
-const KIND_VARIANT: Record<MovementKind, BadgeVariant> = {
-  intake: "success",
-  transfer: "info",
-  dispatch: "warning",
-};
+const KIND = statusMap<MovementKind>({
+  labels: { intake: "Entrada", transfer: "Traslado", dispatch: "Salida" },
+  variants: { intake: "success", transfer: "info", dispatch: "warning" },
+  order: MOVEMENT_KINDS,
+});
+const KIND_OPTIONS = KIND.options;
 
-const KIND_LABEL: Record<MovementKind, string> = {
-  intake: "Entrada",
-  transfer: "Traslado",
-  dispatch: "Salida",
-};
-
-const KIND_OPTIONS = MOVEMENT_KINDS.map((k) => ({
-  value: k,
-  label: KIND_LABEL[k],
-}));
-
-const STATUS_VARIANT: Record<string, BadgeVariant> = {
-  draft: "warning",
-  confirmed: "success",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Borrador",
-  confirmed: "Confirmado",
-};
-
-const STATUS_OPTIONS = MOVEMENT_STATUSES.map((s) => ({
-  value: s,
-  label: STATUS_LABEL[s] ?? s,
-}));
+const STATUS = statusMap({
+  labels: { draft: "Borrador", confirmed: "Confirmado" },
+  variants: { draft: "warning", confirmed: "success" },
+  order: MOVEMENT_STATUSES,
+});
+const STATUS_OPTIONS = STATUS.options;
 
 /** Only movement-specific bits; surfaces/buttons/tables come from base styles. */
 const PAGE_STYLES = `
@@ -80,7 +64,6 @@ const PAGE_STYLES = `
   .movement-tools { display:flex; flex-wrap:wrap; gap:var(--space-4); margin-top:var(--space-5); }
   .movement-tools > * { flex:1 1 260px; }
   .movement-import { display:flex; gap:var(--space-2); align-items:center; flex-wrap:wrap; }
-  .saved { color:var(--success); font-size:var(--font-size-sm); }
 `;
 
 /** Human reference derived from the id, e.g. 123 → "MOV-000123". */
@@ -89,11 +72,11 @@ export function movementCode(id: number): string {
 }
 
 function kindBadge(kind: MovementKind): string {
-  return badge(KIND_LABEL[kind] ?? kind, KIND_VARIANT[kind] ?? "neutral");
+  return KIND.badge(kind);
 }
 
 function statusBadge(status: string): string {
-  return badge(STATUS_LABEL[status] ?? status, STATUS_VARIANT[status] ?? "neutral");
+  return STATUS.badge(status);
 }
 
 function code(value: string | null): string {
@@ -297,13 +280,14 @@ export function movementNewPage(
       locationOptions,
       errors.destination_id
     )}
-    <div class="field">
-      <label class="field__label" for="notes">Notas</label>
-      <textarea id="notes" name="notes" maxlength="500" placeholder="Opcional">${escapeHtml(
-        values.notes
-      )}</textarea>
-      ${errors.notes ? `<span class="field__error">${escapeHtml(errors.notes)}</span>` : ""}
-    </div>
+    ${textareaField({
+      name: "notes",
+      label: "Notas",
+      value: values.notes,
+      placeholder: "Opcional",
+      attrs: 'maxlength="500"',
+      error: errors.notes,
+    })}
     ${formActions(
       button({ label: "Crear borrador" }),
       linkButton({ label: "Cancelar", href: "/movements", variant: "secondary" })
@@ -528,7 +512,7 @@ export function movementHeaderCard(
           errors.destination_id
         )
       : "";
-  const savedMsg = opts.saved ? `<span class="saved">✓ Guardado</span>` : "";
+  const savedMsg = savedIndicator(!!opts.saved);
 
   const formBody = `
     <div class="movement-summary" style="margin-bottom:var(--space-3)">
@@ -537,13 +521,14 @@ export function movementHeaderCard(
     <input type="hidden" name="kind" value="${movement.kind}" />
     ${originField}
     ${destField}
-    <div class="field">
-      <label class="field__label" for="notes">Notas</label>
-      <textarea id="notes" name="notes" maxlength="500" placeholder="Opcional">${escapeHtml(
-        movement.notes
-      )}</textarea>
-      ${errors.notes ? `<span class="field__error">${escapeHtml(errors.notes)}</span>` : ""}
-    </div>
+    ${textareaField({
+      name: "notes",
+      label: "Notas",
+      value: movement.notes,
+      placeholder: "Opcional",
+      attrs: 'maxlength="500"',
+      error: errors.notes,
+    })}
     ${formActions(button({ label: "Guardar cambios", size: "sm" }), savedMsg)}`;
 
   return card(formBody, {

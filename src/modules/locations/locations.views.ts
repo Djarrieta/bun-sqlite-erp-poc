@@ -2,7 +2,6 @@ import type { User } from "../auth/auth.db.ts";
 import {
   escapeHtml,
   badge,
-  type BadgeVariant,
   dataTable,
   dataTableBody,
   type DataTableOptions,
@@ -15,28 +14,21 @@ import {
   formActions,
   button,
   linkButton,
+  statusMap,
+  savedIndicator,
+  readOnlyNote,
 } from "../../components/index.ts";
 import type { Page } from "../../core/repository.ts";
 import { can } from "../../core/permissions.ts";
 import type { Location, LocationKind } from "./locations.db.ts";
 import { LOCATIONS_MODULE, LOCATION_KINDS } from "./locations.rules.ts";
 
-const KIND_VARIANT: Record<LocationKind, BadgeVariant> = {
-  warehouse: "info",
-  store: "success",
-  transit: "warning",
-};
-
-const KIND_LABEL: Record<LocationKind, string> = {
-  warehouse: "Bodega",
-  store: "Tienda",
-  transit: "Tránsito",
-};
-
-const KIND_OPTIONS = LOCATION_KINDS.map((k) => ({
-  value: k,
-  label: KIND_LABEL[k],
-}));
+const KIND = statusMap<LocationKind>({
+  labels: { warehouse: "Bodega", store: "Tienda", transit: "Tránsito" },
+  variants: { warehouse: "info", store: "success", transit: "warning" },
+  order: LOCATION_KINDS,
+});
+const KIND_OPTIONS = KIND.options;
 
 /** Yes/No options for the boolean "active" flag (no checkbox component). */
 const BOOL_OPTIONS = [
@@ -52,7 +44,7 @@ interface FormValues {
 }
 
 function kindBadge(kind: LocationKind): string {
-  return badge(KIND_LABEL[kind] ?? kind, KIND_VARIANT[kind] ?? "neutral");
+  return KIND.badge(kind);
 }
 
 function activeBadge(isActive: number): string {
@@ -247,12 +239,8 @@ export function locationFormFragment(
   const errors = opts.errors ?? {};
 
   const saveBtn = canUpdate ? button({ label: "Guardar" }) : "";
-  const savedMsg = opts.saved
-    ? `<span class="saved">✓ Guardado</span>`
-    : "";
-  const readonlyNote = !canUpdate
-    ? `<p class="muted">Tienes acceso de solo lectura.</p>`
-    : "";
+  const savedMsg = savedIndicator(!!opts.saved);
+  const readonlyNote = readOnlyNote(canUpdate);
 
   const formBody = `
     ${readonlyNote}
@@ -285,6 +273,5 @@ export function locationDetailPage(location: Location, user: User): string {
     title: location.code,
     body,
     maxWidth: "620px",
-    pageStyles: `.saved { color:var(--success); font-size:var(--font-size-sm); }`,
   });
 }
