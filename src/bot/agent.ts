@@ -21,8 +21,11 @@ import { clearPending, remember, type ChatSession } from "./session.ts";
 /** Hard cap on LLM round-trips per message, so a loop can't run away. */
 const MAX_STEPS = 8;
 
-const YES = /^(s[ií]|si|yes|y|ok|okay|dale|confirmo|confirmar|adelante|hazlo|correcto|claro|listo)\b/i;
-const NO = /^(no|n|cancela|cancelar|nel|para|detente|mejor no|olvida)\b/i;
+// Unicode-aware boundary `(?![\p{L}\p{N}])` instead of `\b`: `\b` treats the
+// accented "í" as a non-word char, so a plain "sí" (the natural confirmation)
+// would never match and the bot re-asked forever.
+const YES = /^(s[ií]|si|yes|y|ok|okay|dale|confirmo|confirmar|adelante|hazlo|correcto|claro|listo)(?![\p{L}\p{N}])/iu;
+const NO = /^(no|n|cancela|cancelar|nel|para|detente|mejor no|olvida)(?![\p{L}\p{N}])/iu;
 
 const factory = {
   human: (t: string): BaseMessage => new HumanMessage(t),
