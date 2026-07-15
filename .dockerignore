@@ -6,4 +6,5 @@ data/*.sqlite-wal
 .gitignore
 Dockerfile
 .dockerignore
+docker-compose.yml
 *.md

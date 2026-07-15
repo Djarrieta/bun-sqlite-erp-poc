@@ -1,0 +1,29 @@
+# Two processes share one image and one SQLite database (./data):
+#   - web: the HTTP server (src/index.ts) on PORT
+#   - bot: the Telegram long-polling bot (src/bot/index.ts)
+# Both read secrets from .env (git-ignored; copy from .env.example).
+
+services:
+  web:
+    build: .
+    image: bun-erp-i
+    container_name: bun-erp-web
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${PORT:-4000}:4000"
+    volumes:
+      - ./data:/app/data
+    command: ["bun", "src/index.ts"]
+
+  bot:
+    # Reuse the image built by the `web` service instead of rebuilding it.
+    image: bun-erp-i
+    container_name: bun-erp-bot
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    command: ["bun", "src/bot/index.ts"]
+    depends_on:
+      - web

@@ -1,5 +1,9 @@
 #!/bin/bash
-# This script pulls the latest changes and (re)deploys the app with Docker.
+# This script pulls the latest changes and (re)deploys the app with Docker Compose.
+# It runs two services defined in docker-compose.yml:
+#   - web: the HTTP server (src/index.ts)
+#   - bot: the Telegram bot (src/bot/index.ts)
+# Both share the ./data volume (SQLite) and read secrets from .env.
 
 set -e  # Exit on any error
 
@@ -17,41 +21,30 @@ check_command "Git pull"
 # Ensure host data directory exists for volume mount (SQLite lives here)
 mkdir -p data
 
-# Stop the existing container (if running)
-sudo docker stop bun-erp-c || true  # Don't fail if container doesn't exist
+# Secrets (TELEGRAM_BOT_TOKEN, DEEPSEEK_API_KEY, admin, ...) come from .env.
+if [ ! -f .env ]; then
+    echo "✗ Error: .env not found. Copy .env.example to .env and fill it in."
+    exit 1
+fi
 
-# Remove the existing container
-sudo docker rm bun-erp-c || true    # Don't fail if container doesn't exist
-
-# NOTE: We intentionally do NOT `docker rmi` the old image here.
+# NOTE: We intentionally do NOT `docker rmi` old images here.
 # Removing the image wipes Docker's build cache, forcing a full base-image
 # pull + `bun install` on every deploy. Keeping it lets Docker reuse cached
 # layers: when only source files change (not package.json / bun.lock), the
-# dependency layer is reused and the rebuild is near-instant. The previous
-# image simply becomes dangling and is cleaned up below.
+# dependency layer is reused and the rebuild is near-instant. Previous images
+# simply become dangling and are cleaned up below.
 
-# Build the docker image (reuses cached layers when possible)
-sudo docker build -t bun-erp-i .
-check_command "Docker build"
+# Build images (reuses cached layers when possible) and (re)create the
+# containers. `--build` rebuilds, `-d` runs detached, `--remove-orphans`
+# cleans up any service removed from the compose file.
+sudo docker compose up -d --build --remove-orphans
+check_command "Docker compose up"
 
 # Prune dangling images left over from previous builds (keeps disk usage in
-# check without touching the layer cache used by the active image).
+# check without touching the layer cache used by the active images).
 sudo docker image prune -f || true
 
-# Run the docker container mounting only the data directory for persistence
-# and exposing the HTTP port.
-sudo docker run -d \
-    --name bun-erp-c \
-    --restart=unless-stopped \
-    -p 4000:4000 \
-    -v "$(pwd)/data:/app/data" \
-    bun-erp-i
-check_command "Docker run"
+echo "✓ Services (web + bot) started successfully"
 
-# Display the container logs
-sudo docker logs bun-erp-c
-check_command "Docker logs"
-
-echo "✓ Container bun-erp-c started successfully"
-
-sudo docker logs -f bun-erp-c
+# Follow logs from both services.
+sudo docker compose logs -f
