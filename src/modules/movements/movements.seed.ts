@@ -1,4 +1,4 @@
-import { UserRepository } from "../auth/auth.db.ts";
+import { UserRepository } from "../../auth/auth.db.ts";
 import { ItemRepository } from "../items/items.db.ts";
 import { LocationRepository } from "../locations/locations.db.ts";
 import { InventoryRepository } from "../inventory/inventory.db.ts";

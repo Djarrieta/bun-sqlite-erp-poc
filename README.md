@@ -39,9 +39,11 @@ src/
   index.ts       # HTTP server: registers modules and dispatches requests
   db.ts          # Shared SQLite connection
   theme.ts       # Design tokens + :root CSS variables (single source of truth)
+  auth/          # Auth subsystem (login, sessions, /account) — not a feature module
   components/    # Reusable UI (layout, nav, table, badge)
   core/          # Router, permissions, repository base, module system, CSV
-  modules/       # Feature modules: items, locations, inventory, movements, users, auth
+  modules/       # Feature modules: items, locations, inventory, movements, users
+  bot/           # Telegram bot (separate process: `bun run bot`)
 ```
 
 See [AGENTS.md](AGENTS.md) for architecture, conventions, and how to add a

@@ -1,7 +1,7 @@
 import { forbidden, html, notFound, redirect } from "../../core/http.ts";
 import type { RouteContext, Router } from "../../core/router.ts";
 import { can } from "../../core/permissions.ts";
-import { UserRepository } from "../auth/auth.db.ts";
+import { UserRepository } from "../../auth/auth.db.ts";
 import {
   EventRepository,
   type Event,

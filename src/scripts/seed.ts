@@ -1,5 +1,5 @@
-// Side-effect imports: ensure every module's tables exist before seeding.
-import "../modules/auth/auth.db.ts";
+// Side-effect imports: ensure the auth + every module's tables exist before seeding.
+import "../auth/auth.db.ts";
 import "../modules/items/items.db.ts";
 import "../modules/locations/locations.db.ts";
 import "../modules/inventory/inventory.db.ts";

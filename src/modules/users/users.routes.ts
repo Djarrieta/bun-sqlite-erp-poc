@@ -1,8 +1,8 @@
 import { forbidden, html, notFound, redirect } from "../../core/http.ts";
 import type { RouteContext, Router } from "../../core/router.ts";
 import { can } from "../../core/permissions.ts";
-import { authService } from "../auth/auth.service.ts";
-import { UserRepository } from "../auth/auth.db.ts";
+import { authService } from "../../auth/auth.service.ts";
+import { UserRepository } from "../../auth/auth.db.ts";
 import {
   USERS_MODULE,
   parseNewUserForm,

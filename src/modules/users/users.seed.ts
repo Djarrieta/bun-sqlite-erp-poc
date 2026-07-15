@@ -1,5 +1,5 @@
-import { UserRepository } from "../auth/auth.db.ts";
-import { authService } from "../auth/auth.service.ts";
+import { UserRepository } from "../../auth/auth.db.ts";
+import { authService } from "../../auth/auth.service.ts";
 
 /**
  * Development seed for the users module. Creates the primary admin account from

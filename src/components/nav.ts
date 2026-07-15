@@ -1,4 +1,4 @@
-import type { User } from "../modules/auth/auth.db.ts";
+import type { User } from "../auth/auth.db.ts";
 import { getModules } from "../core/modules.ts";
 import { can } from "../core/permissions.ts";
 import { escapeHtml } from "./layout.ts";

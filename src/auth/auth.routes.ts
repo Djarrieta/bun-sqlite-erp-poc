@@ -1,5 +1,5 @@
-import { html, redirect } from "../../core/http.ts";
-import type { RouteContext, Router } from "../../core/router.ts";
+import { html, redirect } from "../core/http.ts";
+import type { RouteContext, Router } from "../core/router.ts";
 import { authService } from "./auth.service.ts";
 import { accountPage, loginPage } from "./auth.views.ts";
 import type { User } from "./auth.db.ts";
@@ -14,10 +14,9 @@ import type { User } from "./auth.db.ts";
  * is reset by an admin assigning a temporary one. The very first admin is
  * seeded at startup by `authService.ensureAdmin()` in `src/index.ts`.
  *
- * DIVERGENCE FROM THE MODULE PATTERN: normal modules register every route on the
- * shared `Router` inside `register()`, which runs AFTER the auth guard. These
- * routes must be reachable WITHOUT a session, so they are dispatched directly in
- * `src/index.ts` before the guard instead of going through the router.
+ * These routes must be reachable WITHOUT a session, so they are dispatched
+ * directly in `src/index.ts` BEFORE the auth guard instead of going through the
+ * shared `Router` (which only runs for authenticated requests).
  */
 export async function handlePublicAuth(
   req: Request,
@@ -55,7 +54,7 @@ export async function handlePublicAuth(
 /**
  * Register self-service account routes on the main (authenticated) router. Any
  * logged-in user may change their own password here, independent of module
- * permissions. Called from the module's `register()` (see `index.ts`).
+ * permissions. Called directly from `src/index.ts`.
  */
 export function registerAccountRoutes(router: Router): void {
   router.get("/account", ({ user }: RouteContext) => html(accountPage(user)));

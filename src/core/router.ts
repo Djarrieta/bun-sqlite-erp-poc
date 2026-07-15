@@ -1,4 +1,4 @@
-import type { User } from "../modules/auth/auth.db.ts";
+import type { User } from "../auth/auth.db.ts";
 
 export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 

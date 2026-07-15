@@ -10,7 +10,7 @@ import {
   alert,
   APP_NAME,
   APP_TAG,
-} from "../../components/index.ts";
+} from "../components/index.ts";
 import type { User } from "./auth.db.ts";
 
 const AUTH_STYLES = `

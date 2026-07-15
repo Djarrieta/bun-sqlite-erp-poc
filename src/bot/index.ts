@@ -11,15 +11,14 @@
 import { Bot } from "grammy";
 import { Router } from "../core/router.ts";
 import { registerModule } from "../core/modules.ts";
-import { authService } from "../modules/auth/auth.service.ts";
-import { authModule } from "../modules/auth/index.ts";
+import { authService } from "../auth/auth.service.ts";
 import { itemsModule } from "../modules/items/index.ts";
 import { locationsModule } from "../modules/locations/index.ts";
 import { inventoryModule } from "../modules/inventory/index.ts";
 import { movementsModule } from "../modules/movements/index.ts";
 import { eventsModule } from "../modules/events/index.ts";
 import { usersModule } from "../modules/users/index.ts";
-import { UserRepository } from "../modules/auth/auth.db.ts";
+import { UserRepository } from "../auth/auth.db.ts";
 import { getSession } from "./session.ts";
 import { handleMessage } from "./agent.ts";
 import { WhisperTranscriber } from "./transcriber.ts";
@@ -31,7 +30,8 @@ function escapeHtml(s: string): string {
 // Same wiring as src/index.ts: registering the modules calls each `register()`
 // (which populates the permission registry) and pulls in the `*.db.ts` side
 // effects that CREATE the tables. The bot serves no HTTP, so the Router is a
-// throwaway used only to satisfy `registerModule`.
+// throwaway used only to satisfy `registerModule`. Auth is not a module; its
+// tables are created by importing `authService`/`UserRepository` above.
 const router = new Router();
 registerModule(router, itemsModule);
 registerModule(router, locationsModule);
@@ -39,7 +39,6 @@ registerModule(router, inventoryModule);
 registerModule(router, movementsModule);
 registerModule(router, eventsModule);
 registerModule(router, usersModule);
-registerModule(router, authModule);
 await authService.ensureAdmin();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;

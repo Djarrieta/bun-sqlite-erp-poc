@@ -1,4 +1,4 @@
-import type { User } from "../auth/auth.db.ts";
+import type { User } from "../../auth/auth.db.ts";
 import {
   escapeHtml,
   badge,

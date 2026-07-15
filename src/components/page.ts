@@ -4,7 +4,7 @@
  * `page()` so they don't repeat nav wiring, HTMX loading, and width/margin
  * defaults on every screen.
  */
-import type { User } from "../modules/auth/auth.db.ts";
+import type { User } from "../auth/auth.db.ts";
 import { HTMX_SCRIPT, layout } from "./layout.ts";
 import { nav } from "./nav.ts";
 

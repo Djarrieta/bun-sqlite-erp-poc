@@ -35,7 +35,7 @@ bun resetdb     # wipe ALL data (users included), leaving an empty schema
 bun-sqlite-erp-poc/
   data/                 # SQLite database lives here (git-ignored; .gitkeep tracked)
   src/
-    index.ts            # Entry: build Router, registerModule(...) each module, dispatch
+    index.ts            # Entry: build Router, registerModule(...) modules, wire auth, dispatch
     db.ts               # Shared SQLite connection (data/app.sqlite) + PRAGMAs
     theme.ts            # SINGLE SOURCE OF TRUTH for design tokens + :root CSS vars
     views.ts            # Dashboard page for "/"
@@ -60,14 +60,22 @@ bun-sqlite-erp-poc/
       permissions.ts    # can() / registerPermissions + Role & Action types
       repository.ts       # Repository base: shared db + paginate() (search + pagination)
       dates.ts          # Date math (month/week grids, Monday-first) + display formatters
+    auth/               # Auth SUBSYSTEM (not a feature module): login, sessions, /account
+      index.ts          # Barrel: authService, handlePublicAuth, registerAccountRoutes
+      auth.db.ts        # users + sessions tables/repositories; exports the shared User type
+      auth.service.ts   # authService: hashing, session lifecycle, account rules
+      auth.routes.ts    # handlePublicAuth (pre-guard login/logout) + registerAccountRoutes
+      auth.rules.ts     # Password/email validation constants (no permission matrix)
+      auth.views.ts     # Login screen + /account page
     modules/            # Feature modules, one folder per module (see "Module anatomy")
+    bot/                # Telegram bot (separate process: `bun run bot`); reuses auth + modules
 ```
 
 Modules are added and removed over time, so the set under `src/modules/` is not
 fixed. A few conventions still apply:
 
 - New modules should copy the shape of an existing reference module.
-- `auth/`, when present, is a **special** module (see "The auth module" below).
+- Auth is **not** a module — it lives at `src/auth` (see "The auth subsystem").
 
 
 ## Module anatomy
@@ -82,7 +90,7 @@ module**):
 | `<name>.rules.ts`  | `ModulePermissions` matrix, the module key constant, form validation  |
 | `<name>.views.ts`  | HTML/HTMX rendering functions                                         |
 | `<name>.routes.ts` | `register<Name>Routes(router)` — one handler per route                |
-| `<name>.seed.ts`   | Optional dev seed: exports `seed<Name>()` used by `bun seeddb` (auth needs none) |
+| `<name>.seed.ts`   | Optional dev seed: exports `seed<Name>()` used by `bun seeddb` (omit if none) |
 | `index.ts`         | `class XModule extends AppModule` + exported singleton `xModule`; side-effect `import "./<name>.db.ts"` (table-owning modules) so the `CREATE` runs at load |
 
 ### Adding a module
@@ -101,6 +109,11 @@ and a nav entry.
 
 ## Project rules (do / don't)
 
+- **Git / version control:** never run state-changing git commands (`git add`,
+  `git commit`, `git mv`, `git rm`, `git push`, `git reset`, branch/checkout,
+  etc.) unless the user **explicitly** asks. Move or delete files with plain
+  filesystem operations, not git. Read-only git (e.g. `git status`, `git diff`)
+  is fine.
 - **Theming:** all colors, spacing, typography, and radii live in
   `src/theme.ts` and are exposed as CSS custom properties. Components
   and views must reference them via `var(--token)` — **never hardcode hex colors
@@ -129,7 +142,7 @@ and a nav entry.
   deliberately **not** per-user scoped; everyone sees the same data and
   `created_by` is audit-only. New feature modules should still default to
   per-user scoping unless they are shared master data like these.
-- **The `User` type** lives in `src/modules/auth/auth.db.ts`. Import it
+- **The `User` type** lives in `src/auth/auth.db.ts`. Import it
   **type-only** (`import type { User }`). Do **not** import `User` from
   `src/db.ts`.
 - **Escaping:** always run user-supplied text through `escapeHtml()` before
@@ -189,33 +202,39 @@ pagination CSS lives beside the component in `table.ts` (its exported
 `tableStyles`, aggregated globally by `layout.ts`) so HTMX fragments (which ship
 no styles) stay styled.
 
-## The auth module (special case)
+## The auth subsystem (not a module)
 
-Auth extends `AppModule` like any other module but deliberately diverges from
-the standard shape. Each divergence is commented in-code:
+Auth is core plumbing, **not** a feature module. It never used the module
+machinery (no permission matrix, no nav entry, no dashboard card), so it lives at
+`src/auth` — alongside `src/bot` — instead of under `src/modules`, and is wired
+directly in `src/index.ts` rather than via `registerModule`. Its shape:
 
-- `auth.db.ts` owns **three** tables/repositories (users, sessions,
-  password-reset tokens) instead of one.
-- `auth.service.ts` adds a **service layer** (hashing, sessions, tokens) so
-  routes never touch SQL or crypto directly — regular modules don't need this.
-- `auth.rules.ts` has **no permission matrix**: account actions aren't role-gated,
-  so auth never calls `registerPermissions` and never appears in the nav.
-- `auth.routes.ts` exposes `handlePublicAuth` for the **public**
-  login/register/logout/reset routes. These must run **before** the auth guard,
-  so `src/index.ts` dispatches them directly instead of through the router.
-  `register()` only mounts the authenticated `/account` routes.
+- `auth/index.ts` is a **barrel** (not an `AppModule`): it re-exports
+  `authService`, `handlePublicAuth`, and `registerAccountRoutes`, plus the
+  `User` type and `UserRepository`, and runs the `auth.db.ts` side effect.
+- `auth.db.ts` owns **two** tables/repositories (users, sessions) and exports the
+  shared `User` type.
+- `auth.service.ts` adds a **service layer** (hashing, sessions) so routes never
+  touch SQL or crypto directly.
+- `auth.rules.ts` holds only password/email validation constants — **no
+  permission matrix**: account actions aren't role-gated, so auth never calls
+  `registerPermissions` and never appears in the nav.
+- `auth.routes.ts` exposes `handlePublicAuth` for the **public** login/logout
+  routes (dispatched **before** the auth guard in `src/index.ts`) and
+  `registerAccountRoutes` for the authenticated `/account` routes (mounted on the
+  shared router).
 
 ## The users module (special case)
 
 The `users` module handles admin-facing account management and is deliberately
 **thin**: it owns **no table of its own**. Instead of a `users.db.ts`, it reuses
-the `UserRepository` from `src/modules/auth/auth.db.ts` (users and auth share the
+the `UserRepository` from `src/auth/auth.db.ts` (users and auth share the
 same `users` table). Consequences of owning no table:
 
 - There is no `users.db.ts`, and `users/index.ts` has **no** side-effect
   `import "./users.db.ts"`.
 - Data access still goes through a `Repository` subclass (`UserRepository`), just
-  one that the auth module defines.
+  one that the auth subsystem defines.
 
 It is otherwise a normal module: `users.rules.ts` declares an admin-only
 permission matrix, and it appears in the nav and dashboard for admins.

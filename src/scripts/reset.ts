@@ -1,7 +1,7 @@
 import { db } from "../db.ts";
-// Side-effect imports: make sure every module's tables exist before we clear
-// them, so a reset is deterministic even on a fresh database.
-import "../modules/auth/auth.db.ts";
+// Side-effect imports: make sure the auth + every module's tables exist before
+// we clear them, so a reset is deterministic even on a fresh database.
+import "../auth/auth.db.ts";
 import "../modules/items/items.db.ts";
 import "../modules/locations/locations.db.ts";
 import "../modules/inventory/inventory.db.ts";

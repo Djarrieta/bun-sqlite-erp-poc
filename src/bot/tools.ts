@@ -13,8 +13,8 @@
  * user to confirm before the real write.
  */
 import { can, type Action, type Role } from "../core/permissions.ts";
-import type { User } from "../modules/auth/auth.db.ts";
-import { UserRepository } from "../modules/auth/auth.db.ts";
+import type { User } from "../auth/auth.db.ts";
+import { UserRepository } from "../auth/auth.db.ts";
 import {
   ItemRepository,
   parseTags,

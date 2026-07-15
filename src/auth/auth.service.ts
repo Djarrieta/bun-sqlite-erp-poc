@@ -1,4 +1,4 @@
-import type { Role } from "../../core/permissions.ts";
+import type { Role } from "../core/permissions.ts";
 import {
   SessionRepository,
   UserRepository,
@@ -9,10 +9,9 @@ import { MIN_PASSWORD, isValidEmail } from "./auth.rules.ts";
 /**
  * Auth business logic.
  *
- * DIVERGENCE FROM THE MODULE PATTERN: typical modules have their routes talk to
- * a repository directly (see `items.routes.ts`). Auth centralizes hashing,
- * session lifecycle, and token handling behind this service so routes never
- * touch SQL or crypto. It is exposed as the `authService` singleton below.
+ * Auth centralizes hashing, session lifecycle, and token handling behind this
+ * service so routes never touch SQL or crypto. It is exposed as the
+ * `authService` singleton below.
  */
 
 const SESSION_COOKIE = "session";

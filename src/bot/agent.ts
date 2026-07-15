@@ -12,7 +12,7 @@ import {
   type BaseMessage,
 } from "@langchain/core/messages";
 import { can } from "../core/permissions.ts";
-import type { User } from "../modules/auth/auth.db.ts";
+import type { User } from "../auth/auth.db.ts";
 import { deepseek } from "./deepseek.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { TOOLS_BY_NAME, toolSpecsFor } from "./tools.ts";

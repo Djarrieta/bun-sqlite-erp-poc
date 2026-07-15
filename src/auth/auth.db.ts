@@ -1,16 +1,15 @@
-import type { Role } from "../../core/permissions.ts";
-import { Repository } from "../../core/repository.ts";
-import { db } from "../../db.ts";
+import type { Role } from "../core/permissions.ts";
+import { Repository } from "../core/repository.ts";
+import { db } from "../db.ts";
 
 /**
- * Data access for the auth module.
+ * Data access for the auth subsystem.
  *
- * DIVERGENCE FROM THE MODULE PATTERN: a typical module owns a single table and
- * one repository (see `items.db.ts`). Auth is special — it owns two related
- * tables (users, sessions) and therefore two repositories. They are
- * consolidated here so the module still exposes a single `*.db.ts` entry point.
- * Tables are declared users-first because sessions holds a foreign key into
- * `users(id)`.
+ * Auth is core plumbing (see `src/auth/index.ts`), not a feature module, so it
+ * follows its own shape: it owns two related tables (users, sessions) and
+ * therefore two repositories, consolidated here behind a single `*.db.ts` entry
+ * point. Tables are declared users-first because sessions holds a foreign key
+ * into `users(id)`.
  */
 
 /** An application user. Shared type imported across the app (type-only). */

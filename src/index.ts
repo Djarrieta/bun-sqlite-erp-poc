@@ -1,8 +1,11 @@
 import { html, notFound, redirect } from "./core/http.ts";
 import { Router } from "./core/router.ts";
 import { registerModule } from "./core/modules.ts";
-import { authService } from "./modules/auth/auth.service.ts";
-import { authModule, handlePublicAuth } from "./modules/auth/index.ts";
+import {
+  authService,
+  handlePublicAuth,
+  registerAccountRoutes,
+} from "./auth/index.ts";
 import { homePage } from "./views.ts";
 import { itemsModule } from "./modules/items/index.ts";
 import { locationsModule } from "./modules/locations/index.ts";
@@ -13,9 +16,10 @@ import { usersModule } from "./modules/users/index.ts";
 
 const PORT = Number(process.env.PORT ?? 4000);
 
-// Every feature registers as a module on the shared router. Auth is a module
-// too (self-service /account routes); its public login/logout/reset routes
-// run before the guard via `handlePublicAuth`. Add new modules here.
+// Every feature registers as a module on the shared router. Add new modules
+// here. Auth is NOT a module (see `src/auth`): its authenticated `/account`
+// routes are mounted directly via `registerAccountRoutes`, and its public
+// login/logout routes run before the guard via `handlePublicAuth`.
 const router = new Router();
 registerModule(router, itemsModule);
 registerModule(router, locationsModule);
@@ -23,7 +27,7 @@ registerModule(router, inventoryModule);
 registerModule(router, movementsModule);
 registerModule(router, eventsModule);
 registerModule(router, usersModule);
-registerModule(router, authModule);
+registerAccountRoutes(router);
 
 // There is no public sign-up: seed the first admin if the database is empty.
 await authService.ensureAdmin();
