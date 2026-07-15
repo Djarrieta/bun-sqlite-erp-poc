@@ -22,8 +22,17 @@ services:
     container_name: bun-erp-bot
     restart: unless-stopped
     env_file: .env
+    environment:
+      - WHISPER_URL=http://whisper-service:9000
     volumes:
       - ./data:/app/data
     command: ["bun", "src/bot/index.ts"]
     depends_on:
       - web
+    networks:
+      - default
+      - shared-services
+
+networks:
+  shared-services:
+    external: true

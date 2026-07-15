@@ -22,6 +22,11 @@ import { usersModule } from "../modules/users/index.ts";
 import { UserRepository } from "../modules/auth/auth.db.ts";
 import { getSession } from "./session.ts";
 import { handleMessage } from "./agent.ts";
+import { WhisperTranscriber } from "./transcriber.ts";
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
 // Same wiring as src/index.ts: registering the modules calls each `register()`
 // (which populates the permission registry) and pulls in the `*.db.ts` side
@@ -54,6 +59,17 @@ if (!process.env.DEEPSEEK_API_KEY) {
 const users = new UserRepository();
 const bot = new Bot(token);
 
+const transcriber = process.env.WHISPER_URL
+  ? new WhisperTranscriber(process.env.WHISPER_URL)
+  : null;
+
+async function downloadFile(fileId: string): Promise<Buffer> {
+  const file = await bot.api.getFile(fileId);
+  const url = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+  const res = await fetch(url);
+  return Buffer.from(await res.arrayBuffer());
+}
+
 const HELP = `Soy el asistente del ERP. Escríbeme en lenguaje natural para consultar o modificar datos según tu rol.
 
 Ejemplos:
@@ -69,6 +85,85 @@ bot.command("start", (ctx) =>
   )
 );
 bot.command("help", (ctx) => ctx.reply(HELP));
+
+bot.on("message:voice", async (ctx) => {
+  const fromId = ctx.from?.id;
+  if (!fromId) return;
+  if (!transcriber) {
+    await ctx.reply("❌ Transcripción de audio no configurada.");
+    return;
+  }
+
+  const user = users.findByTelegramId(String(fromId));
+  if (!user) {
+    await ctx.reply(
+      `No estás vinculado a ninguna cuenta. Pide a un administrador que registre tu ID de Telegram (${fromId}) en el módulo de Usuarios.`
+    );
+    return;
+  }
+
+  try {
+    await ctx.api.sendChatAction(ctx.chat.id, "typing").catch(() => {});
+    await ctx.reply("🎤 Transcribiendo...");
+
+    const buffer = await downloadFile(ctx.message.voice.file_id);
+    const text = await transcriber.transcribe(buffer, ctx.message.voice.mime_type);
+
+    if (!text) {
+      await ctx.reply("⚠️ No se pudo transcribir el audio.");
+      return;
+    }
+
+    await ctx.reply(`📝 <b>Transcripción:</b> ${escapeHtml(text)}`, { parse_mode: "HTML" });
+
+    const session = getSession(ctx.chat.id);
+    const reply = await handleMessage(user, session, text);
+    await ctx.reply(reply);
+  } catch (err) {
+    console.error("[bot] voice error:", err);
+    await ctx.reply("Ocurrió un error procesando el audio. Intenta de nuevo.");
+  }
+});
+
+bot.on("message:audio", async (ctx) => {
+  const fromId = ctx.from?.id;
+  if (!fromId) return;
+  if (!transcriber) {
+    await ctx.reply("❌ Transcripción de audio no configurada.");
+    return;
+  }
+
+  const user = users.findByTelegramId(String(fromId));
+  if (!user) {
+    await ctx.reply(
+      `No estás vinculado a ninguna cuenta. Pide a un administrador que registre tu ID de Telegram (${fromId}) en el módulo de Usuarios.`
+    );
+    return;
+  }
+
+  try {
+    await ctx.api.sendChatAction(ctx.chat.id, "typing").catch(() => {});
+    await ctx.reply("🎤 Transcribiendo...");
+
+    const buffer = await downloadFile(ctx.message.audio.file_id);
+    const mimeType = ctx.message.audio.mime_type ?? "audio/ogg";
+    const text = await transcriber.transcribe(buffer, mimeType);
+
+    if (!text) {
+      await ctx.reply("⚠️ No se pudo transcribir el audio.");
+      return;
+    }
+
+    await ctx.reply(`📝 <b>Transcripción:</b> ${escapeHtml(text)}`, { parse_mode: "HTML" });
+
+    const session = getSession(ctx.chat.id);
+    const reply = await handleMessage(user, session, text);
+    await ctx.reply(reply);
+  } catch (err) {
+    console.error("[bot] audio error:", err);
+    await ctx.reply("Ocurrió un error procesando el audio. Intenta de nuevo.");
+  }
+});
 
 bot.on("message:text", async (ctx) => {
   const fromId = ctx.from?.id;
