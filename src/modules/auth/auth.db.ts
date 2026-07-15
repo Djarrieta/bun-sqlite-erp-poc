@@ -19,6 +19,8 @@ export interface User {
   email: string;
   password_hash: string;
   role: Role;
+  /** Linked Telegram numeric id (stored as text), or null when not linked. Set by admins. */
+  telegram_id: string | null;
   created_at: string;
 }
 
@@ -30,6 +32,7 @@ db.exec(`
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'member',
+    telegram_id TEXT UNIQUE,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
@@ -55,6 +58,13 @@ export class UserRepository extends Repository {
     return this.db
       .query<User, [number]>("SELECT * FROM users WHERE id = ?")
       .get(id);
+  }
+
+  /** Resolve the user linked to a Telegram numeric id (as text), if any. */
+  findByTelegramId(telegramId: string): User | null {
+    return this.db
+      .query<User, [string]>("SELECT * FROM users WHERE telegram_id = ?")
+      .get(telegramId);
   }
 
   list(): User[] {
@@ -92,6 +102,13 @@ export class UserRepository extends Repository {
     this.db
       .query("UPDATE users SET password_hash = ? WHERE id = ?")
       .run(passwordHash, id);
+  }
+
+  /** Link (or unlink, passing null) a Telegram id to a user. */
+  setTelegramId(id: number, telegramId: string | null): void {
+    this.db
+      .query("UPDATE users SET telegram_id = ? WHERE id = ?")
+      .run(telegramId, id);
   }
 
   delete(id: number): void {

@@ -7,11 +7,13 @@ import {
   USERS_MODULE,
   parseNewUserForm,
   parsePasswordForm,
+  parseTelegramForm,
   generateTempPassword,
 } from "./users.rules.ts";
 import {
   userNewPage,
   userPasswordPage,
+  userTelegramPage,
   usersListPage,
   usersTableFragment,
 } from "./users.views.ts";
@@ -86,6 +88,46 @@ export function registerUserRoutes(router: Router): void {
         400
       );
     return html(userPasswordPage(user, target, password, { success: true }));
+  });
+
+  // Link a Telegram account (admin) — form
+  router.get("/users/:id/telegram", ({ user, params }: RouteContext) => {
+    if (!can(user, USERS_MODULE, "update")) return forbidden();
+    const target = users.findById(Number(params.id));
+    if (!target) return notFound();
+    return html(userTelegramPage(user, target));
+  });
+
+  // Link a Telegram account (admin) — submit. Empty value unlinks.
+  router.post("/users/:id/telegram", async ({ req, user, params }: RouteContext) => {
+    if (!can(user, USERS_MODULE, "update")) return forbidden();
+    const target = users.findById(Number(params.id));
+    if (!target) return notFound();
+    const { telegramId, errors } = parseTelegramForm(await req.formData());
+    if (Object.keys(errors).length > 0)
+      return html(
+        userTelegramPage(user, target, {
+          error: errors.telegram_id,
+          value: telegramId ?? "",
+        }),
+        400
+      );
+    // Enforce the one-to-one link before hitting the UNIQUE constraint so the
+    // admin gets a friendly message instead of a 500.
+    if (telegramId) {
+      const owner = users.findByTelegramId(telegramId);
+      if (owner && owner.id !== target.id)
+        return html(
+          userTelegramPage(user, target, {
+            error: `Ese ID ya está vinculado a ${owner.email}.`,
+            value: telegramId,
+          }),
+          400
+        );
+    }
+    users.setTelegramId(target.id, telegramId);
+    const updated = users.findById(target.id) ?? target;
+    return html(userTelegramPage(user, updated, { success: true }));
   });
 
   // Delete

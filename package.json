@@ -6,11 +6,18 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
+    "bot": "bun src/bot/index.ts",
+    "bot:dev": "bun --watch src/bot/index.ts",
     "seeddb": "bun src/scripts/seed.ts",
     "resetdb": "bun src/scripts/reset.ts",
     "fonts": "bun src/scripts/download-fonts.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.2.3",
+    "@langchain/openai": "^1.5.5",
+    "grammy": "^1.44.0"
   }
 }

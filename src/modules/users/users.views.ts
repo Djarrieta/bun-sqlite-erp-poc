@@ -45,6 +45,12 @@ function roleBadge(role: string): string {
 }
 
 function deleteCell(u: User, currentUser: User): string {
+  const telegram = linkButton({
+    label: "Telegram",
+    href: `/users/${u.id}/telegram`,
+    variant: "secondary",
+    size: "sm",
+  });
   const resetPassword = linkButton({
     label: "Contraseña",
     href: `/users/${u.id}/password`,
@@ -63,7 +69,7 @@ function deleteCell(u: User, currentUser: User): string {
             u.email
           )}?"`,
         });
-  return `<div style="display:flex;gap:var(--space-2);justify-content:flex-end">${resetPassword}${remove}</div>`;
+  return `<div style="display:flex;gap:var(--space-2);justify-content:flex-end">${telegram}${resetPassword}${remove}</div>`;
 }
 
 /** The users table, wrapped so it can be swapped as an HTMX target. */
@@ -73,11 +79,19 @@ export function usersTableFragment(users: User[], currentUser: User): string {
       { header: "ID", cell: (u) => String(u.id), width: "56px", numeric: true },
       { header: "Correo", cell: (u) => escapeHtml(u.email) },
       { header: "Rol", cell: (u) => roleBadge(u.role), width: "150px" },
+      {
+        header: "Telegram",
+        cell: (u) =>
+          u.telegram_id
+            ? escapeHtml(u.telegram_id)
+            : `<span style="opacity:0.4">\u2014</span>`,
+        width: "120px",
+      },
       { header: "Creado", cell: (u) => formatDate(u.created_at), width: "120px" },
       {
         header: "",
         cell: (u) => deleteCell(u, currentUser),
-        width: "210px",
+        width: "320px",
         align: "right",
       },
     ],
@@ -236,6 +250,50 @@ export function userPasswordPage(
     user: currentUser,
     current: "/users",
     title: "Restablecer contraseña",
+    body,
+    maxWidth: "560px",
+  });
+}
+
+/** Admin form to link (or unlink) a Telegram account to an existing user. */
+export function userTelegramPage(
+  currentUser: User,
+  target: User,
+  opts: { error?: string; success?: boolean; value?: string } = {}
+): string {
+  const current = opts.value ?? target.telegram_id ?? "";
+  const formBody = `
+    ${opts.success ? alert("Vínculo de Telegram actualizado.", "success") : ""}
+    ${alert(opts.error ?? "", "error")}
+    ${textField({
+      name: "telegram_id",
+      label: "ID de Telegram",
+      value: current,
+      placeholder: "Ej. 123456789",
+      hint: "ID numérico del usuario en Telegram. Déjalo vacío para desvincular.",
+      autocomplete: "off",
+      attrs: 'inputmode="numeric" maxlength="20"',
+    })}
+    ${formActions(
+      button({ label: "Guardar vínculo" }),
+      linkButton({ label: "Volver", href: "/users", variant: "secondary" })
+    )}`;
+
+  const body = `
+  ${backLink("/users", "← Volver a usuarios")}
+  ${pageHeader("Vincular Telegram", {
+    eyebrow: "Administración",
+    subtitle: `${escapeHtml(target.email)} · ${escapeHtml(target.role)}`,
+  })}
+  ${card(formBody, {
+    as: "form",
+    attrs: `method="POST" action="/users/${target.id}/telegram"`,
+  })}`;
+
+  return page({
+    user: currentUser,
+    current: "/users",
+    title: "Vincular Telegram",
     body,
     maxWidth: "560px",
   });

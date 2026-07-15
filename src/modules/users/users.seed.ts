@@ -2,30 +2,52 @@ import { UserRepository } from "../auth/auth.db.ts";
 import { authService } from "../auth/auth.service.ts";
 
 /**
- * Development seed for the users module. Creates the primary dev account.
- * Passwords are hashed through `authService` so seeded users log in normally.
- * Idempotent: skips creation when the account already exists.
+ * Development seed for the users module. Creates the primary admin account from
+ * `ADMIN_EMAIL` / `ADMIN_PASSWORD` — the same env vars and defaults used by
+ * `authService.ensureAdmin`. Passwords are hashed through `authService` so the
+ * account logs in normally. Idempotent: skips creation when it already exists.
  */
 const SEED_USER = {
-  email: "djarrieta@erp.com",
-  password: "dariojose",
+  email: (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase(),
+  password: process.env.ADMIN_PASSWORD ?? "",
   role: "admin",
 } as const;
+
+/**
+ * Optional Telegram id linked to the seeded admin so they can use the bot.
+ * Only users with a linked Telegram id may chat with the bot, so this is how
+ * the first user gets access. Leave empty to skip linking.
+ */
+const ADMIN_TELEGRAM_ID = (process.env.ADMIN_TELEGRAM_ID ?? "").trim();
 
 export async function seedUsers(): Promise<void> {
   const users = new UserRepository();
   if (users.findByEmail(SEED_USER.email)) {
     console.log(`   users: ${SEED_USER.email} already exists, skipping`);
-    return;
-  }
-  const result = await authService.createUser(
-    SEED_USER.email,
-    SEED_USER.password,
-    SEED_USER.role
-  );
-  if (result.ok) console.log(`   users: created ${SEED_USER.email}`);
-  else
-    console.error(
-      `   users: failed to create ${SEED_USER.email}: ${result.error}`
+  } else {
+    const result = await authService.createUser(
+      SEED_USER.email,
+      SEED_USER.password,
+      SEED_USER.role
     );
+    if (result.ok) console.log(`   users: created ${SEED_USER.email}`);
+    else {
+      console.error(
+        `   users: failed to create ${SEED_USER.email}: ${result.error}`
+      );
+      return;
+    }
+  }
+
+  // Grant the admin bot access by linking their Telegram id (set
+  // ADMIN_TELEGRAM_ID in .env). Idempotent: only writes when it changed.
+  if (ADMIN_TELEGRAM_ID) {
+    const admin = users.findByEmail(SEED_USER.email);
+    if (admin && admin.telegram_id !== ADMIN_TELEGRAM_ID) {
+      users.setTelegramId(admin.id, ADMIN_TELEGRAM_ID);
+      console.log(
+        `   users: linked Telegram id ${ADMIN_TELEGRAM_ID} to ${SEED_USER.email}`
+      );
+    }
+  }
 }
