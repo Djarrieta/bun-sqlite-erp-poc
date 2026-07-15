@@ -34,6 +34,12 @@ fi
 # dependency layer is reused and the rebuild is near-instant. Previous images
 # simply become dangling and are cleaned up below.
 
+# Stop and remove the existing stack first so host ports (e.g. 4000) are
+# released before we recreate. Without this, a leftover container from a
+# previous deploy can still be bound to the port, causing
+# "failed to bind host port 0.0.0.0:4000/tcp: address already in use".
+sudo docker compose down --remove-orphans
+
 # Build images (reuses cached layers when possible) and (re)create the
 # containers. `--build` rebuilds, `-d` runs detached, `--remove-orphans`
 # cleans up any service removed from the compose file.
