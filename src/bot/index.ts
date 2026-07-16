@@ -16,12 +16,18 @@ import { itemsModule } from "../modules/items/index.ts";
 import { locationsModule } from "../modules/locations/index.ts";
 import { inventoryModule } from "../modules/inventory/index.ts";
 import { movementsModule } from "../modules/movements/index.ts";
+import { companiesModule } from "../modules/companies/index.ts";
+import { contactsModule } from "../modules/contacts/index.ts";
+import { projectsModule } from "../modules/projects/index.ts";
+import { visitsModule } from "../modules/visits/index.ts";
+import { tasksModule } from "../modules/tasks/index.ts";
 import { eventsModule } from "../modules/events/index.ts";
 import { usersModule } from "../modules/users/index.ts";
 import { UserRepository } from "../auth/auth.db.ts";
 import { getSession } from "./session.ts";
 import { handleMessage } from "./agent.ts";
 import { WhisperTranscriber } from "./transcriber.ts";
+import { tryLogVisit } from "./visit.ts";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -37,6 +43,11 @@ registerModule(router, itemsModule);
 registerModule(router, locationsModule);
 registerModule(router, inventoryModule);
 registerModule(router, movementsModule);
+registerModule(router, companiesModule);
+registerModule(router, contactsModule);
+registerModule(router, projectsModule);
+registerModule(router, visitsModule);
+registerModule(router, tasksModule);
 registerModule(router, eventsModule);
 registerModule(router, usersModule);
 await authService.ensureAdmin();
@@ -115,6 +126,17 @@ bot.on("message:voice", async (ctx) => {
 
     await ctx.reply(`📝 <b>Transcripción:</b> ${escapeHtml(text)}`, { parse_mode: "HTML" });
 
+    // Audio may be a visit log (bitácora). If so, handle it here; otherwise
+    // fall back to the normal agent (query) flow.
+    const visitResult = await tryLogVisit(user, text, {
+      buffer,
+      mimeType: ctx.message.voice.mime_type,
+    });
+    if (visitResult.handled) {
+      await ctx.reply(visitResult.reply ?? "Listo.");
+      return;
+    }
+
     const session = getSession(ctx.chat.id);
     const reply = await handleMessage(user, session, text);
     await ctx.reply(reply);
@@ -154,6 +176,14 @@ bot.on("message:audio", async (ctx) => {
     }
 
     await ctx.reply(`📝 <b>Transcripción:</b> ${escapeHtml(text)}`, { parse_mode: "HTML" });
+
+    // Audio may be a visit log (bitácora). If so, handle it here; otherwise
+    // fall back to the normal agent (query) flow.
+    const visitResult = await tryLogVisit(user, text, { buffer, mimeType });
+    if (visitResult.handled) {
+      await ctx.reply(visitResult.reply ?? "Listo.");
+      return;
+    }
 
     const session = getSession(ctx.chat.id);
     const reply = await handleMessage(user, session, text);

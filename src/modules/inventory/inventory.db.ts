@@ -79,6 +79,17 @@ export class InventoryRepository extends Repository {
     );
   }
 
+  /** Total units (summed quantity) currently at a location — for summaries. */
+  totalUnitsAtLocation(locationId: number): number {
+    return (
+      this.db
+        .query<{ n: number }, [number]>(
+          "SELECT COALESCE(SUM(quantity), 0) AS n FROM inventory WHERE location_id = ?"
+        )
+        .get(locationId)?.n ?? 0
+    );
+  }
+
   /**
    * Add `delta` (may be negative) to the balance of an item at a location. Run
    * inside a `db.transaction(...)`.

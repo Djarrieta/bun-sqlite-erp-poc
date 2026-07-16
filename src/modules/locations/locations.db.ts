@@ -16,6 +16,8 @@ export interface Location {
   kind: LocationKind;
   /** 1 = usable in movements, 0 = archived. */
   is_active: number;
+  /** Optional CRM project this location belongs to (null = unassigned). */
+  project_id: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +38,10 @@ export interface LocationListParams extends PageParams {
   active?: string;
 }
 
+// `project_id` links a location to a CRM project (projects module). The FK is a
+// forward reference: SQLite permits referencing a table that does not yet exist
+// at CREATE time — it is only enforced on INSERT/UPDATE, by which point the
+// projects table has been created at boot.
 db.exec(`
   CREATE TABLE IF NOT EXISTS locations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,9 +49,11 @@ db.exec(`
     name TEXT NOT NULL,
     kind TEXT NOT NULL DEFAULT 'warehouse',
     is_active INTEGER NOT NULL DEFAULT 1,
+    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+  CREATE INDEX IF NOT EXISTS idx_locations_project ON locations(project_id);
 `);
 
 /** Data access for locations. The directory is shared org-wide. */
@@ -97,6 +105,33 @@ export class LocationRepository extends Repository {
         "SELECT * FROM locations WHERE is_active = 1 ORDER BY code ASC"
       )
       .all();
+  }
+
+  /** All locations linked to a project, ordered by code — for the project page. */
+  listByProject(projectId: number): Location[] {
+    return this.db
+      .query<Location, [number]>(
+        "SELECT * FROM locations WHERE project_id = ? ORDER BY code ASC"
+      )
+      .all(projectId);
+  }
+
+  /** Active locations not linked to any project — candidates to link to one. */
+  activeUnassigned(): Location[] {
+    return this.db
+      .query<Location, []>(
+        "SELECT * FROM locations WHERE is_active = 1 AND project_id IS NULL ORDER BY code ASC"
+      )
+      .all();
+  }
+
+  /** Link a location to a project (or clear the link when `projectId` is null). */
+  assignProject(locationId: number, projectId: number | null): void {
+    this.db
+      .query(
+        "UPDATE locations SET project_id = ?, updated_at = datetime('now') WHERE id = ?"
+      )
+      .run(projectId, locationId);
   }
 
   create(input: LocationInput): Location {

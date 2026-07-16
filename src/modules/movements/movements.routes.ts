@@ -7,6 +7,7 @@ import { InventoryRepository } from "../inventory/inventory.db.ts";
 import { LocationRepository } from "../locations/locations.db.ts";
 import {
   MOVEMENTS_MODULE,
+  MOVEMENT_KINDS,
   parseMovementForm,
   validateLineQuantity,
 } from "./movements.rules.ts";
@@ -26,7 +27,7 @@ import {
   type MovementFilters,
   type MovementFormValues,
 } from "./movements.views.ts";
-import type { MovementInput } from "./movements.db.ts";
+import type { MovementInput, MovementKind } from "./movements.db.ts";
 
 /**
  * Registers the movements module's routes. Movements read and write stock
@@ -95,9 +96,30 @@ export function registerMovementRoutes(router: Router): void {
   });
 
   // New form — registered before "/movements/:id" so it isn't captured as an id.
-  router.get("/movements/new", ({ user }: RouteContext) => {
+  // Optional ?kind=&origin=&destination= prefill the form — e.g. the projects
+  // module links here with kind=transfer&destination=<locationId> so equipment
+  // can be moved straight to a project location.
+  router.get("/movements/new", ({ url, user }: RouteContext) => {
     if (!can(user, MOVEMENTS_MODULE, "create")) return forbidden();
-    return html(movementNewPage(user, locationOptions()));
+    const kindParam = url.searchParams.get("kind") ?? "";
+    const kind: MovementKind = (MOVEMENT_KINDS as readonly string[]).includes(
+      kindParam
+    )
+      ? (kindParam as MovementKind)
+      : "transfer";
+    const validLoc = (raw: string | null): string => {
+      const locId = Number(raw ?? "");
+      return Number.isInteger(locId) && locId > 0 && locations.get(locId)
+        ? String(locId)
+        : "";
+    };
+    const values: MovementFormValues = {
+      kind,
+      originId: validLoc(url.searchParams.get("origin")),
+      destinationId: validLoc(url.searchParams.get("destination")),
+      notes: "",
+    };
+    return html(movementNewPage(user, locationOptions(), values));
   });
 
   // Create draft

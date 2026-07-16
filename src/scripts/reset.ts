@@ -1,3 +1,4 @@
+import { rmSync } from "node:fs";
 import { db } from "../db.ts";
 // Side-effect imports: make sure the auth + every module's tables exist before
 // we clear them, so a reset is deterministic even on a fresh database.
@@ -6,6 +7,11 @@ import "../modules/items/items.db.ts";
 import "../modules/locations/locations.db.ts";
 import "../modules/inventory/inventory.db.ts";
 import "../modules/movements/movements.db.ts";
+import "../modules/companies/companies.db.ts";
+import "../modules/contacts/contacts.db.ts";
+import "../modules/projects/projects.db.ts";
+import "../modules/visits/visits.db.ts";
+import "../modules/tasks/tasks.db.ts";
 
 /**
  * Wipe ALL application data — including users — leaving an empty schema behind.
@@ -32,6 +38,9 @@ function resetDatabase(): void {
   });
   clear();
   db.exec("PRAGMA foreign_keys = ON;");
+
+  // Also drop any stored visit audio (files live under data/audio/, outside DB).
+  rmSync("data/audio", { recursive: true, force: true });
 
   console.log(`🗑️  Reset complete: cleared ${tables.length} table(s).`);
 }
