@@ -1,5 +1,6 @@
 import { UserRepository } from "../../auth/auth.db.ts";
 import { authService } from "../../auth/auth.service.ts";
+import type { Role } from "../../core/permissions.ts";
 
 /**
  * Development seed for the users module. Creates the primary admin account from
@@ -12,6 +13,19 @@ const SEED_USER = {
   password: process.env.ADMIN_PASSWORD ?? "",
   role: "admin",
 } as const;
+
+/**
+ * Extra test accounts, one per non-admin role, so every permission set can be
+ * exercised in development. They all reuse `ADMIN_PASSWORD` (the admin already
+ * uses it) for easy login. Idempotent, like the admin above.
+ */
+const TEST_USERS: readonly { email: string; role: Role }[] = [
+  { email: "comercial@erp.com", role: "sales" },
+  { email: "finanzas@erp.com", role: "financial" },
+  { email: "ingenieria@erp.com", role: "engineer" },
+  { email: "logistica@erp.com", role: "logistic" },
+  { email: "miembro@erp.com", role: "member" },
+];
 
 /**
  * Optional Telegram id linked to the seeded admin so they can use the bot.
@@ -49,5 +63,24 @@ export async function seedUsers(): Promise<void> {
         `   users: linked Telegram id ${ADMIN_TELEGRAM_ID} to ${SEED_USER.email}`
       );
     }
+  }
+
+  // Test accounts (one per non-admin role) sharing ADMIN_PASSWORD.
+  for (const test of TEST_USERS) {
+    if (users.findByEmail(test.email)) {
+      console.log(`   users: ${test.email} already exists, skipping`);
+      continue;
+    }
+    const result = await authService.createUser(
+      test.email,
+      SEED_USER.password,
+      test.role
+    );
+    if (result.ok)
+      console.log(`   users: created ${test.email} (${test.role})`);
+    else
+      console.error(
+        `   users: failed to create ${test.email}: ${result.error}`
+      );
   }
 }
