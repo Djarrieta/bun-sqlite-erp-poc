@@ -24,11 +24,18 @@ import { tasksModule } from "../modules/tasks/index.ts";
 import { eventsModule } from "../modules/events/index.ts";
 import { usersModule } from "../modules/users/index.ts";
 import { reportsModule } from "../modules/reports/index.ts";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { UserRepository } from "../auth/auth.db.ts";
-import { getSession } from "./session.ts";
+import { getSession, remember } from "./session.ts";
 import { handleMessage } from "./agent.ts";
 import { WhisperTranscriber } from "./transcriber.ts";
 import { tryLogVisit } from "./visit.ts";
+
+/** Factory the session uses to build history messages without importing LangChain. */
+const messageFactory = {
+  human: (t: string) => new HumanMessage(t),
+  ai: (t: string) => new AIMessage(t),
+};
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -128,6 +135,8 @@ bot.on("message:voice", async (ctx) => {
 
     await ctx.reply(`📝 <b>Transcripción:</b> ${escapeHtml(text)}`, { parse_mode: "HTML" });
 
+    const session = getSession(ctx.chat.id);
+
     // Audio may be a visit log (bitácora). If so, handle it here; otherwise
     // fall back to the normal agent (query) flow.
     const visitResult = await tryLogVisit(user, text, {
@@ -135,11 +144,14 @@ bot.on("message:voice", async (ctx) => {
       mimeType: ctx.message.voice.mime_type,
     });
     if (visitResult.handled) {
-      await ctx.reply(visitResult.reply ?? "Listo.");
+      const reply = visitResult.reply ?? "Listo.";
+      // Keep the transcript in the conversation so a later follow-up (e.g.
+      // "márcalo como inactivo") can resolve what was said in the audio.
+      remember(session, text, reply, messageFactory);
+      await ctx.reply(reply);
       return;
     }
 
-    const session = getSession(ctx.chat.id);
     const reply = await handleMessage(user, session, text);
     await ctx.reply(reply);
   } catch (err) {
@@ -179,15 +191,20 @@ bot.on("message:audio", async (ctx) => {
 
     await ctx.reply(`📝 <b>Transcripción:</b> ${escapeHtml(text)}`, { parse_mode: "HTML" });
 
+    const session = getSession(ctx.chat.id);
+
     // Audio may be a visit log (bitácora). If so, handle it here; otherwise
     // fall back to the normal agent (query) flow.
     const visitResult = await tryLogVisit(user, text, { buffer, mimeType });
     if (visitResult.handled) {
-      await ctx.reply(visitResult.reply ?? "Listo.");
+      const reply = visitResult.reply ?? "Listo.";
+      // Keep the transcript in the conversation so a later follow-up (e.g.
+      // "márcalo como inactivo") can resolve what was said in the audio.
+      remember(session, text, reply, messageFactory);
+      await ctx.reply(reply);
       return;
     }
 
-    const session = getSession(ctx.chat.id);
     const reply = await handleMessage(user, session, text);
     await ctx.reply(reply);
   } catch (err) {
