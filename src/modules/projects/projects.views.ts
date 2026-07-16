@@ -377,7 +377,8 @@ export function projectDetailPage(
   companyName: string,
   user: User,
   companyOptions: SelectOption[],
-  locationsSection: string
+  locationsSection: string,
+  visitsSection: string
 ): string {
   const body = `
   ${backLink("/projects", "← Volver a proyectos")}
@@ -386,7 +387,8 @@ export function projectDetailPage(
     actions: projectStatusBadge(project.status),
   })}
   ${projectFormFragment(project, user, companyOptions)}
-  ${locationsSection}`;
+  ${locationsSection}
+  ${visitsSection}`;
 
   return page({
     user,
@@ -404,4 +406,8 @@ const PAGE_STYLES = `
   .section-title { font-family: var(--font-display); font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); letter-spacing: -0.01em; margin: 0 0 var(--space-3); }
   .project-loc-link { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border); }
   .row-actions { display: inline-flex; gap: var(--space-2); justify-content: flex-end; flex-wrap: wrap; }
+  .related-section { margin-top: var(--space-6); }
+  .related-section__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .related-section__title { font-family: var(--font-display); font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); letter-spacing: -0.01em; margin: 0; }
+  .related-section__actions { display: inline-flex; gap: var(--space-2); flex-wrap: wrap; }
 `;

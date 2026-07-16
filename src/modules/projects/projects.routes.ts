@@ -17,6 +17,7 @@ import {
   projectsResults,
   type ProjectLocationRow,
 } from "./projects.views.ts";
+import { projectVisitsSection } from "../visits/visits.related.ts";
 
 /**
  * Registers the projects module's routes. Projects are shared org-wide and
@@ -157,7 +158,8 @@ export function registerProjectRoutes(router: Router): void {
         company?.name ?? "—",
         user,
         companyOptions(project.company_id),
-        locationsSection(project.id, user)
+        locationsSection(project.id, user),
+        projectVisitsSection(project.id, user)
       )
     );
   });

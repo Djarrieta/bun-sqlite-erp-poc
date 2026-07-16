@@ -48,6 +48,13 @@ const STATUS = statusMap<VisitStatus>({
   },
 });
 
+/** Badge for a visit's source (Manual/Audio) — reused by related sections. */
+export const visitSourceBadge = (source: VisitSource): string =>
+  SOURCE.badge(source);
+/** Badge for a visit's processing status — reused by related sections. */
+export const visitStatusBadge = (status: VisitStatus): string =>
+  STATUS.badge(status);
+
 const NO_COMPANY: SelectOption = { value: "", label: "— Sin compañía —" };
 const NO_PROJECT: SelectOption = { value: "", label: "— Sin proyecto —" };
 

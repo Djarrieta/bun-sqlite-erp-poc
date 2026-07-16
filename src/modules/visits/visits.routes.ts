@@ -137,10 +137,27 @@ export function registerVisitRoutes(router: Router): void {
     );
   });
 
-  // New form (web) — registered before "/visits/:id".
-  router.get("/visits/new", ({ user }: RouteContext) => {
+  // New form (web) — registered before "/visits/:id". Supports ?company=<id>
+  // and ?project=<id> to prefill (e.g. from a company/project detail page).
+  router.get("/visits/new", ({ url, user }: RouteContext) => {
     if (!can(user, VISITS_MODULE, "create")) return forbidden();
-    return html(visitNewPage(user, companyOptions(), projectOptions()));
+    const companyParam = Number(url.searchParams.get("company") ?? "");
+    const projectParam = Number(url.searchParams.get("project") ?? "");
+    const companyId =
+      Number.isInteger(companyParam) && companies.get(companyParam)
+        ? companyParam
+        : 0;
+    const projectId =
+      Number.isInteger(projectParam) && projects.get(projectParam)
+        ? projectParam
+        : 0;
+    return html(
+      visitNewPage(user, companyOptions(companyId || undefined), projectOptions(), {
+        companyId: companyId ? String(companyId) : "",
+        projectId: projectId ? String(projectId) : "",
+        notes: "",
+      })
+    );
   });
 
   // Create (web)

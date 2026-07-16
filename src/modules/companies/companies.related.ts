@@ -10,6 +10,7 @@ import { CONTACTS_MODULE } from "../contacts/contacts.rules.ts";
 import { ProjectRepository, type Project } from "../projects/projects.db.ts";
 import { PROJECTS_MODULE } from "../projects/projects.rules.ts";
 import { projectStatusBadge } from "../projects/projects.views.ts";
+import { companyVisitsSection } from "../visits/visits.related.ts";
 
 const contacts = new ContactRepository();
 const projects = new ProjectRepository();
@@ -90,5 +91,5 @@ function projectsSection(companyId: number, user: User): string {
  * quick roster of its people and work.
  */
 export function companyRelatedSections(companyId: number, user: User): string {
-  return `${contactsSection(companyId, user)}${projectsSection(companyId, user)}`;
+  return `${contactsSection(companyId, user)}${projectsSection(companyId, user)}${companyVisitsSection(companyId, user)}`;
 }

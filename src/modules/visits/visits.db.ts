@@ -159,6 +159,26 @@ export class VisitRepository extends Repository {
       .get(id);
   }
 
+  /** Recent visits linked to a company (newest first), for its detail page. */
+  listByCompany(companyId: number, limit = 50): VisitListRow[] {
+    return this.db
+      .query<VisitListRow, [number, number]>(
+        `SELECT ${LIST_SELECT} FROM ${LIST_FROM}
+         WHERE v.company_id = ? ORDER BY v.id DESC LIMIT ?`
+      )
+      .all(companyId, limit);
+  }
+
+  /** Recent visits linked to a project (newest first), for its detail page. */
+  listByProject(projectId: number, limit = 50): VisitListRow[] {
+    return this.db
+      .query<VisitListRow, [number, number]>(
+        `SELECT ${LIST_SELECT} FROM ${LIST_FROM}
+         WHERE v.project_id = ? ORDER BY v.id DESC LIMIT ?`
+      )
+      .all(projectId, limit);
+  }
+
   /** Create a web visit (manual notes). Ready immediately. */
   createWeb(input: VisitInput, createdBy: number): Visit {
     const row = this.db

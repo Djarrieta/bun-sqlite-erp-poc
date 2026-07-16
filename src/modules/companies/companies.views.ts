@@ -320,4 +320,5 @@ export const COMPANY_PAGE_STYLES = `
   .related-section { margin-top: var(--space-6); }
   .related-section__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
   .related-section__title { font-family: var(--font-display); font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); letter-spacing: -0.01em; margin: 0; }
+  .related-section__actions { display: inline-flex; gap: var(--space-2); flex-wrap: wrap; }
 `;
