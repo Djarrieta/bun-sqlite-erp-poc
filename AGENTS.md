@@ -42,17 +42,7 @@ bun-sqlite-erp-poc/
     globals.d.ts        # Ambient Bun / bun:sqlite type declarations
     components/         # Presentation-only, reusable building blocks
       layout.ts         # HTML document shell; @font-face + aggregates each component's styles, HTMX_SCRIPT, escapeHtml
-      page.ts           # page() shell (nav + layout), pageHeader(), backLink()
-      nav.ts            # Permission-aware top navigation
-      button.ts         # button() / linkButton() with variants + sizes
-      form.ts           # textField() / selectField() / textareaField() / chip() / chipGroup() / formActions()
-      card.ts           # card() surface (renders <div> or <form>)
-      feedback.ts       # alert() banners + savedIndicator() / readOnlyNote()
-      table.ts            # Data table; dataTable() adds search + pagination + mobile cards
-      filter.ts         # filterPanel(): reusable funnel/filter panel (dropdowns + chip groups)
-      badge.ts          # Status pill
-      status-map.ts     # statusMap(): shared label + badge-variant + <select> options for a status set
-      calendar.ts       # calendarRegion(): generic HTMX month/week calendar (date math in core/dates.ts)
+      *.ts              # Reusable UI building blocks (page shell, nav, buttons, forms, cards, tables, badges, etc.); each owns its styles
     core/               # Framework-style plumbing (no feature logic)
       http.ts           # html / redirect / notFound / forbidden helpers
       router.ts         # Tiny ":param" router + RouteContext
@@ -95,17 +85,12 @@ module**):
 
 ### Adding a module
 
-1. Copy an existing reference module folder under `src/modules/` as a starting point.
-2. Define the permission matrix and validation in `<name>.rules.ts`.
-3. Extend `AppModule` in `index.ts` and export a singleton (`export const
-   <name>Module = new <Name>Module()`). `register()` calls `registerPermissions`
-   and `register<Name>Routes`. If the module owns a table, also add a side-effect
-   `import "./<name>.db.ts"` so its `CREATE TABLE` runs when the module loads.
-4. Import that singleton in `src/index.ts` and add
-   `registerModule(router, <name>Module)`.
-
-That automatically wires up routes, permission enforcement, a dashboard card,
-and a nav entry.
+> **Full checklist — every file to create/edit, including the Telegram bot —
+> lives in the `create-module` skill:**
+> [`.agents/skills/create-module/SKILL.md`](.agents/skills/create-module/SKILL.md).
+> Read it before adding a module. It walks through every file to create and wire
+> up so the module gets its routes, permission enforcement, dashboard card, nav
+> entry, and the assistant's tools.
 
 ## Project rules (do / don't)
 
