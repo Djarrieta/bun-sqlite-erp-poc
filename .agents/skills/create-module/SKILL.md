@@ -17,8 +17,8 @@ an existing reference module instead of writing from scratch:
 
 - **Simple CRUD, shared org-wide:** `src/modules/locations/` (code/name/status).
 - **Owns a FK to another module + a related section:** `src/modules/projects/`.
-- **Row-scoped visibility (creator/assignee):** `src/modules/events/` or
-  `src/modules/tasks/` (permissive matrix + `canView`).
+- **Row-scoped visibility (creator/assignee):** `src/modules/tasks/`
+  (permissive matrix + `canView`).
 - **Cross-module reads/writes:** `src/modules/movements/` (uses items,
   locations, inventory repos).
 

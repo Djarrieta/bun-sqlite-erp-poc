@@ -99,8 +99,10 @@ export function registerVisitRoutes(router: Router): void {
       description: "",
       status: "pending",
       priority: "medium",
-      dueDate: "",
-      assigneeId: visit.created_by,
+      startAt: "",
+      endAt: "",
+      assigneeUserIds: [visit.created_by],
+      assigneeRoles: [],
     };
     const task = tasks.create(input, userId, {
       companyId: visit.company_id,

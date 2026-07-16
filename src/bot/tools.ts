@@ -2,7 +2,8 @@
  * Bot tool layer: the bridge between the LLM's function calls and the app's
  * repositories. Every tool maps to a permission (`module` + `action`) and is
  * enforced twice — the agent only advertises tools the user's role allows, and
- * each handler re-checks `can()` (plus row-level `canView()` for events).
+ * each handler re-checks `can()` (plus row-level `canView()` for row-scoped
+ * modules like tasks).
  *
  * SECURITY: handlers only ever pass values as *bound* parameters through the
  * repositories (which use `?` placeholders). LLM output never reaches the raw,
@@ -12,7 +13,7 @@
  * human-readable preview *without writing*, which the agent uses to ask the
  * user to confirm before the real write.
  */
-import { can, type Action, type Role } from "../core/permissions.ts";
+import { can, type Action } from "../core/permissions.ts";
 import type { User } from "../auth/auth.db.ts";
 import { UserRepository } from "../auth/auth.db.ts";
 import {
@@ -33,8 +34,6 @@ import { InventoryRepository } from "../modules/inventory/inventory.db.ts";
 import { INVENTORY_MODULE } from "../modules/inventory/inventory.rules.ts";
 import { MovementRepository } from "../modules/movements/movements.db.ts";
 import { MOVEMENTS_MODULE } from "../modules/movements/movements.rules.ts";
-import { EventRepository, type Event } from "../modules/events/events.db.ts";
-import { parseEventForm, EVENTS_MODULE } from "../modules/events/events.rules.ts";
 import {
   CompanyRepository,
   type Company,
@@ -100,7 +99,6 @@ const items = new ItemRepository();
 const locations = new LocationRepository();
 const inventory = new InventoryRepository();
 const movements = new MovementRepository();
-const events = new EventRepository();
 const companies = new CompanyRepository();
 const contacts = new ContactRepository();
 const projects = new ProjectRepository();
@@ -183,39 +181,6 @@ function locationInputFrom(args: ToolArgs, base?: Location) {
     args.isActive != null ? bool(args.isActive) : base ? base.is_active === 1 : true;
   fd.set("is_active", isActive ? "1" : "0");
   return parseLocationForm(fd);
-}
-
-function eventInputFrom(
-  args: ToolArgs,
-  base?: { event: Event; users: number[]; roles: Role[] }
-) {
-  const fd = new FormData();
-  fd.set("title", args.title != null ? String(args.title) : base?.event.title ?? "");
-  fd.set(
-    "description",
-    args.description != null ? String(args.description) : base?.event.description ?? ""
-  );
-  fd.set(
-    "start_at",
-    args.startAt != null ? String(args.startAt) : base?.event.start_at ?? ""
-  );
-  fd.set("end_at", args.endAt != null ? String(args.endAt) : base?.event.end_at ?? "");
-  fd.set(
-    "status",
-    args.status != null ? String(args.status) : base?.event.status ?? "draft"
-  );
-  const userIds =
-    args.assigneeUserIds != null
-      ? strArray(args.assigneeUserIds)
-      : (base?.users ?? []).map(String);
-  for (const id of userIds) fd.append("assignee_user", id);
-  const roles =
-    args.assigneeRoles != null
-      ? strArray(args.assigneeRoles)
-      : (base?.roles ?? []).map(String);
-  for (const r of roles) fd.append("assignee_role", r);
-  const validUserIds = new Set(usersRepo.list().map((u) => u.id));
-  return parseEventForm(fd, validUserIds);
 }
 
 function companyInputFrom(args: ToolArgs, base?: Company) {
@@ -305,16 +270,24 @@ function taskInputFrom(args: ToolArgs, base?: Task) {
     args.priority != null ? String(args.priority) : base?.priority ?? "medium"
   );
   fd.set(
-    "due_date",
-    args.dueDate != null ? String(args.dueDate) : base?.due_date ?? ""
+    "start_at",
+    args.startAt != null ? String(args.startAt) : base?.start_at ?? ""
   );
-  const assigneeId =
-    args.assigneeId != null
-      ? String(args.assigneeId)
-      : base?.assignee_id != null
-        ? String(base.assignee_id)
-        : "";
-  fd.set("assignee_id", assigneeId);
+  fd.set("end_at", args.endAt != null ? String(args.endAt) : base?.end_at ?? "");
+  const userIds =
+    args.assigneeUserIds != null
+      ? strArray(args.assigneeUserIds)
+      : base
+        ? tasks.assigneeUsers(base.id).map((u) => String(u.id))
+        : [];
+  for (const id of userIds) fd.append("assignee_user", id);
+  const roles =
+    args.assigneeRoles != null
+      ? strArray(args.assigneeRoles)
+      : base
+        ? tasks.assigneeRoles(base.id).map(String)
+        : [];
+  for (const r of roles) fd.append("assignee_role", r);
   const validUserIds = new Set(usersRepo.list().map((u) => u.id));
   return parseTaskForm(fd, validUserIds);
 }
@@ -654,213 +627,6 @@ export const BOT_TOOLS: BotTool[] = [
       })
         ? `Ubicación #${id} archivada (inactiva).`
         : "No se pudo archivar la ubicación.";
-    },
-  },
-  // --- Events: read (row-level scoped) ---
-  {
-    module: EVENTS_MODULE,
-    action: "view",
-    mutating: false,
-    spec: {
-      type: "function",
-      function: {
-        name: "list_events",
-        description:
-          "Lista los eventos que el usuario puede ver (creados por él o donde está asignado). Devuelve una página.",
-        parameters: {
-          type: "object",
-          properties: {
-            q: { type: "string", description: "Búsqueda por título o descripción." },
-            status: {
-              type: "string",
-              enum: ["draft", "scheduled", "done", "cancelled"],
-            },
-            scope: {
-              type: "string",
-              enum: ["created", "assigned"],
-              description: "Limita a los creados por mí o los asignados a mí.",
-            },
-          },
-          required: [],
-        },
-      },
-    },
-    run: (args, user) => {
-      assertCan(user, EVENTS_MODULE, "view");
-      return JSON.stringify(
-        events.list({
-          userId: user.id,
-          role: user.role,
-          q: optStr(args.q),
-          status: optStr(args.status),
-          scope: optStr(args.scope),
-        })
-      );
-    },
-  },
-  {
-    module: EVENTS_MODULE,
-    action: "read",
-    mutating: false,
-    spec: {
-      type: "function",
-      function: {
-        name: "get_event",
-        description: "Obtiene un evento por su id (solo si el usuario puede verlo).",
-        parameters: {
-          type: "object",
-          properties: { id: { type: "integer" } },
-          required: ["id"],
-        },
-      },
-    },
-    run: (args, user) => {
-      assertCan(user, EVENTS_MODULE, "read");
-      const id = reqId(args.id);
-      if (!events.canView(user.id, user.role, id))
-        return JSON.stringify({ error: "Evento no encontrado o sin acceso." });
-      const event = events.get(id);
-      if (!event) return JSON.stringify({ error: "Evento no encontrado." });
-      return JSON.stringify({
-        ...event,
-        assigneeUsers: events.assigneeUsers(id),
-        assigneeRoles: events.assigneeRoles(id),
-      });
-    },
-  },
-  // --- Events: write (row-level scoped) ---
-  {
-    module: EVENTS_MODULE,
-    action: "create",
-    mutating: true,
-    spec: {
-      type: "function",
-      function: {
-        name: "create_event",
-        description:
-          "Crea un evento. Las fechas usan formato 'YYYY-MM-DDTHH:MM'. Puedes asignarlo a usuarios (ids) y/o roles.",
-        parameters: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            description: { type: "string" },
-            startAt: { type: "string", description: "Inicio, ej. 2026-07-20T09:30." },
-            endAt: { type: "string", description: "Fin opcional, mismo formato." },
-            status: {
-              type: "string",
-              enum: ["draft", "scheduled", "done", "cancelled"],
-            },
-            assigneeUserIds: { type: "array", items: { type: "integer" } },
-            assigneeRoles: {
-              type: "array",
-              items: {
-                type: "string",
-                enum: [
-                  "admin",
-                  "sales",
-                  "financial",
-                  "engineer",
-                  "logistic",
-                  "member",
-                ],
-              },
-            },
-          },
-          required: ["title", "startAt"],
-        },
-      },
-    },
-    run: (args, user, dryRun) => {
-      assertCan(user, EVENTS_MODULE, "create");
-      const { input, errors } = eventInputFrom(args);
-      throwIfErrors(errors);
-      if (dryRun)
-        return `Crear evento: título="${input.title}", inicio=${input.startAt}${
-          input.endAt ? `, fin=${input.endAt}` : ""
-        }, estado="${input.status}", usuarios=[${input.assigneeUserIds.join(
-          ", "
-        )}], roles=[${input.assigneeRoles.join(", ")}].`;
-      const created = events.create(input, user.id);
-      return `Evento #${created.id} creado ("${created.title}").`;
-    },
-  },
-  {
-    module: EVENTS_MODULE,
-    action: "update",
-    mutating: true,
-    spec: {
-      type: "function",
-      function: {
-        name: "update_event",
-        description:
-          "Actualiza un evento que el usuario pueda ver. Solo cambia los campos que envíes.",
-        parameters: {
-          type: "object",
-          properties: {
-            id: { type: "integer" },
-            title: { type: "string" },
-            description: { type: "string" },
-            startAt: { type: "string" },
-            endAt: { type: "string" },
-            status: {
-              type: "string",
-              enum: ["draft", "scheduled", "done", "cancelled"],
-            },
-            assigneeUserIds: { type: "array", items: { type: "integer" } },
-            assigneeRoles: { type: "array", items: { type: "string" } },
-          },
-          required: ["id"],
-        },
-      },
-    },
-    run: (args, user, dryRun) => {
-      assertCan(user, EVENTS_MODULE, "update");
-      const id = reqId(args.id);
-      if (!events.canView(user.id, user.role, id))
-        throw new Error("Evento no encontrado o sin acceso.");
-      const existing = events.get(id);
-      if (!existing) throw new Error("Evento no encontrado.");
-      const { input, errors } = eventInputFrom(args, {
-        event: existing,
-        users: events.assigneeUsers(id).map((u) => u.id),
-        roles: events.assigneeRoles(id),
-      });
-      throwIfErrors(errors);
-      if (dryRun)
-        return `Actualizar evento #${id}: título="${input.title}", inicio=${input.startAt}, estado="${input.status}".`;
-      return events.update(id, input)
-        ? `Evento #${id} actualizado.`
-        : "No se pudo actualizar el evento.";
-    },
-  },
-  {
-    module: EVENTS_MODULE,
-    action: "delete",
-    mutating: true,
-    spec: {
-      type: "function",
-      function: {
-        name: "delete_event",
-        description:
-          "Elimina un evento que el usuario pueda ver. Esta acción es permanente.",
-        parameters: {
-          type: "object",
-          properties: { id: { type: "integer" } },
-          required: ["id"],
-        },
-      },
-    },
-    run: (args, user, dryRun) => {
-      assertCan(user, EVENTS_MODULE, "delete");
-      const id = reqId(args.id);
-      if (!events.canView(user.id, user.role, id))
-        throw new Error("Evento no encontrado o sin acceso.");
-      const existing = events.get(id);
-      if (!existing) throw new Error("Evento no encontrado.");
-      if (dryRun)
-        return `Eliminar evento #${id} ("${existing.title}"). Esta acción es permanente.`;
-      events.delete(id);
-      return `Evento #${id} eliminado.`;
     },
   },
   // --- Inventory: read only ---
@@ -1421,7 +1187,7 @@ export const BOT_TOOLS: BotTool[] = [
             q: { type: "string", description: "Búsqueda por título o descripción." },
             status: {
               type: "string",
-              enum: ["pending", "in_progress", "done"],
+              enum: ["pending", "in_progress", "done", "cancelled"],
             },
             priority: { type: "string", enum: ["low", "medium", "high"] },
             scope: {
@@ -1440,6 +1206,7 @@ export const BOT_TOOLS: BotTool[] = [
       return JSON.stringify(
         tasks.list({
           userId: user.id,
+          role: user.role,
           q: optStr(args.q),
           status: optStr(args.status),
           priority: optStr(args.priority),
@@ -1468,9 +1235,15 @@ export const BOT_TOOLS: BotTool[] = [
     run: (args, user) => {
       assertCan(user, TASKS_MODULE, "read");
       const id = reqId(args.id);
-      if (!tasks.canView(user.id, id))
+      if (!tasks.canView(user.id, user.role, id))
         return JSON.stringify({ error: "Tarea no encontrada o sin acceso." });
-      return JSON.stringify(tasks.get(id) ?? { error: "Tarea no encontrada." });
+      const task = tasks.get(id);
+      if (!task) return JSON.stringify({ error: "Tarea no encontrada." });
+      return JSON.stringify({
+        ...task,
+        assigneeUsers: tasks.assigneeUsers(id),
+        assigneeRoles: tasks.assigneeRoles(id),
+      });
     },
   },
   // --- Tasks: write (row-level scoped) ---
@@ -1483,16 +1256,34 @@ export const BOT_TOOLS: BotTool[] = [
       function: {
         name: "create_task",
         description:
-          "Crea una tarea. Puedes asignarla a un usuario (assigneeId). Fecha límite 'YYYY-MM-DD'.",
+          "Crea una tarea. Fechas opcionales de inicio/fin 'YYYY-MM-DDTHH:MM'. Puedes asignarla a usuarios (ids) y/o roles.",
         parameters: {
           type: "object",
           properties: {
             title: { type: "string" },
             description: { type: "string" },
-            status: { type: "string", enum: ["pending", "in_progress", "done"] },
+            status: {
+              type: "string",
+              enum: ["pending", "in_progress", "done", "cancelled"],
+            },
             priority: { type: "string", enum: ["low", "medium", "high"] },
-            dueDate: { type: "string", description: "Fecha límite 'YYYY-MM-DD'." },
-            assigneeId: { type: "integer", description: "Id del usuario asignado (opcional)." },
+            startAt: { type: "string", description: "Inicio 'YYYY-MM-DDTHH:MM' (opcional)." },
+            endAt: { type: "string", description: "Fin/límite 'YYYY-MM-DDTHH:MM' (opcional)." },
+            assigneeUserIds: { type: "array", items: { type: "integer" } },
+            assigneeRoles: {
+              type: "array",
+              items: {
+                type: "string",
+                enum: [
+                  "admin",
+                  "sales",
+                  "financial",
+                  "engineer",
+                  "logistic",
+                  "member",
+                ],
+              },
+            },
           },
           required: ["title"],
         },
@@ -1524,10 +1315,15 @@ export const BOT_TOOLS: BotTool[] = [
             id: { type: "integer" },
             title: { type: "string" },
             description: { type: "string" },
-            status: { type: "string", enum: ["pending", "in_progress", "done"] },
+            status: {
+              type: "string",
+              enum: ["pending", "in_progress", "done", "cancelled"],
+            },
             priority: { type: "string", enum: ["low", "medium", "high"] },
-            dueDate: { type: "string" },
-            assigneeId: { type: "integer" },
+            startAt: { type: "string" },
+            endAt: { type: "string" },
+            assigneeUserIds: { type: "array", items: { type: "integer" } },
+            assigneeRoles: { type: "array", items: { type: "string" } },
           },
           required: ["id"],
         },
@@ -1536,7 +1332,7 @@ export const BOT_TOOLS: BotTool[] = [
     run: (args, user, dryRun) => {
       assertCan(user, TASKS_MODULE, "update");
       const id = reqId(args.id);
-      if (!tasks.canView(user.id, id))
+      if (!tasks.canView(user.id, user.role, id))
         throw new Error("Tarea no encontrada o sin acceso.");
       const existing = tasks.get(id);
       if (!existing) throw new Error("Tarea no encontrada.");

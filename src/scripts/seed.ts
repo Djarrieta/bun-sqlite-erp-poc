@@ -9,7 +9,6 @@ import "../modules/contacts/contacts.db.ts";
 import "../modules/projects/projects.db.ts";
 import "../modules/visits/visits.db.ts";
 import "../modules/tasks/tasks.db.ts";
-import "../modules/events/events.db.ts";
 import "../modules/reports/reports.db.ts";
 import { seedItems } from "../modules/items/items.seed.ts";
 import { seedUsers } from "../modules/users/users.seed.ts";
@@ -20,7 +19,6 @@ import { seedContacts } from "../modules/contacts/contacts.seed.ts";
 import { seedProjects } from "../modules/projects/projects.seed.ts";
 import { seedVisits } from "../modules/visits/visits.seed.ts";
 import { seedTasks } from "../modules/tasks/tasks.seed.ts";
-import { seedEvents } from "../modules/events/events.seed.ts";
 import { seedReports } from "../modules/reports/reports.seed.ts";
 
 /**
@@ -41,6 +39,5 @@ seedProjects();
 seedVisits();
 seedTasks();
 seedMovements();
-seedEvents();
 seedReports();
 console.log("✅ Seed complete.");

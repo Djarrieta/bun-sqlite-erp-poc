@@ -13,7 +13,6 @@ const MODULES: { key: string; label: string }[] = [
   { key: "projects", label: "Proyectos" },
   { key: "visits", label: "Bitácoras" },
   { key: "tasks", label: "Tareas" },
-  { key: "events", label: "Eventos" },
   { key: "users", label: "Usuarios" },
 ];
 

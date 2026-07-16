@@ -16,7 +16,6 @@ import { contactsModule } from "./modules/contacts/index.ts";
 import { projectsModule } from "./modules/projects/index.ts";
 import { visitsModule } from "./modules/visits/index.ts";
 import { tasksModule } from "./modules/tasks/index.ts";
-import { eventsModule } from "./modules/events/index.ts";
 import { usersModule } from "./modules/users/index.ts";
 import { reportsModule } from "./modules/reports/index.ts";
 
@@ -36,7 +35,6 @@ registerModule(router, contactsModule);
 registerModule(router, projectsModule);
 registerModule(router, visitsModule);
 registerModule(router, tasksModule);
-registerModule(router, eventsModule);
 registerModule(router, usersModule);
 registerModule(router, reportsModule);
 registerAccountRoutes(router);
