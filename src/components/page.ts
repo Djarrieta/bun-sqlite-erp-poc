@@ -21,6 +21,8 @@ export interface PageOptions {
   margin?: string;
   /** Load HTMX. Defaults to true. */
   htmx?: boolean;
+  /** Extra `<script>`/`<link>` tags injected into `<head>` (after HTMX). */
+  scripts?: string;
   /** Optional page-specific extra CSS. */
   pageStyles?: string;
 }
@@ -30,11 +32,14 @@ export function page(opts: PageOptions): string {
   const inner = opts.maxWidth
     ? `<div class="app-main__inner" style="max-width:${opts.maxWidth}">`
     : `<div class="app-main__inner">`;
+  const head =
+    `${opts.htmx === false ? "" : HTMX_SCRIPT}${opts.scripts ?? ""}` ||
+    undefined;
   return layout({
     title: opts.title,
     maxWidth: "none",
     margin: "0",
-    head: opts.htmx === false ? undefined : HTMX_SCRIPT,
+    head,
     pageStyles: opts.pageStyles ?? "",
     body: `<div class="app-shell">${nav(opts.user, opts.current ?? "")}<main class="app-main">${inner}${opts.body}</div></main></div>`,
   });

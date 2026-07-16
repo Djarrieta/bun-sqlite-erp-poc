@@ -18,6 +18,7 @@ import { visitsModule } from "./modules/visits/index.ts";
 import { tasksModule } from "./modules/tasks/index.ts";
 import { eventsModule } from "./modules/events/index.ts";
 import { usersModule } from "./modules/users/index.ts";
+import { reportsModule } from "./modules/reports/index.ts";
 
 const PORT = Number(process.env.PORT ?? 4000);
 
@@ -37,6 +38,7 @@ registerModule(router, visitsModule);
 registerModule(router, tasksModule);
 registerModule(router, eventsModule);
 registerModule(router, usersModule);
+registerModule(router, reportsModule);
 registerAccountRoutes(router);
 
 // There is no public sign-up: seed the first admin if the database is empty.
@@ -59,6 +61,25 @@ const server = Bun.serve({
           return new Response(file, {
             headers: {
               "content-type": "font/woff2",
+              "cache-control": "public, max-age=31536000, immutable",
+            },
+          });
+        }
+      }
+      return notFound();
+    }
+
+    // --- Static assets: self-hosted vendor scripts (Chart.js) ----------
+    // Public and served before the auth guard; the strict filename check
+    // blocks path traversal (no "/" can appear in the matched name).
+    if (req.method === "GET" && pathname.startsWith("/vendor/")) {
+      const name = pathname.slice("/vendor/".length);
+      if (/^[a-z0-9.-]+\.js$/.test(name)) {
+        const file = Bun.file(`public/vendor/${name}`);
+        if (await file.exists()) {
+          return new Response(file, {
+            headers: {
+              "content-type": "text/javascript; charset=utf-8",
               "cache-control": "public, max-age=31536000, immutable",
             },
           });

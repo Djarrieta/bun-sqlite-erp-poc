@@ -1,10 +1,14 @@
 import { ChatOpenAI } from "@langchain/openai";
 
 /**
- * DeepSeek chat model exposed through its OpenAI-compatible API. DeepSeek speaks
- * the OpenAI wire format, so LangChain's `ChatOpenAI` works unchanged once we
- * point it at DeepSeek's base URL. The instance is created lazily and reused for
- * every message handled by this bot process.
+ * Shared LLM client for the whole app. DeepSeek speaks the OpenAI wire format,
+ * so LangChain's `ChatOpenAI` works unchanged once we point it at DeepSeek's
+ * base URL. The instance is created lazily and reused by every caller in the
+ * process (the Telegram bot's agent, the reports SQL generator, ...).
+ *
+ * The key is only read when the model is first used, so importing this module
+ * never crashes a process that has no `DEEPSEEK_API_KEY` — only the feature
+ * that actually calls the model does.
  *
  * Env:
  *   DEEPSEEK_API_KEY   (required) — your DeepSeek API key.

@@ -13,7 +13,7 @@ import {
 } from "@langchain/core/messages";
 import { can } from "../core/permissions.ts";
 import type { User } from "../auth/auth.db.ts";
-import { deepseek } from "./deepseek.ts";
+import { deepseek } from "../core/llm.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { TOOLS_BY_NAME, toolSpecsFor } from "./tools.ts";
 import { clearPending, remember, type ChatSession } from "./session.ts";

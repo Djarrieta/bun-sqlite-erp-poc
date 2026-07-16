@@ -18,7 +18,7 @@ import { CompanyRepository, type Company } from "../modules/companies/companies.
 import { ProjectRepository, type Project } from "../modules/projects/projects.db.ts";
 import { VisitRepository } from "../modules/visits/visits.db.ts";
 import { VISITS_MODULE } from "../modules/visits/visits.rules.ts";
-import { deepseek } from "./deepseek.ts";
+import { deepseek } from "../core/llm.ts";
 
 const AUDIO_DIR = "data/audio";
 const MIME_EXTENSIONS: Record<string, string> = {

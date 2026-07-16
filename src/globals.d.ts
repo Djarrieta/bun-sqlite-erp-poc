@@ -36,7 +36,10 @@ declare const Bun: {
 
 declare module "bun:sqlite" {
   export class Database {
-    constructor(filename?: string, options?: { create?: boolean });
+    constructor(
+      filename?: string,
+      options?: { create?: boolean; readonly?: boolean }
+    );
     exec(sql: string): void;
     query<Row = unknown, Params extends unknown[] = unknown[]>(
       sql: string

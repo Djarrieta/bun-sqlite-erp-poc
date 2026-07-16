@@ -12,6 +12,7 @@ import "../modules/contacts/contacts.db.ts";
 import "../modules/projects/projects.db.ts";
 import "../modules/visits/visits.db.ts";
 import "../modules/tasks/tasks.db.ts";
+import "../modules/reports/reports.db.ts";
 
 /**
  * Wipe ALL application data — including users — leaving an empty schema behind.

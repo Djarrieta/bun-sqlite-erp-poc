@@ -10,7 +10,8 @@
     "bot:dev": "bun --watch src/bot/index.ts",
     "seeddb": "bun src/scripts/seed.ts",
     "resetdb": "bun src/scripts/reset.ts",
-    "fonts": "bun src/scripts/download-fonts.ts"
+    "fonts": "bun src/scripts/download-fonts.ts",
+    "charts": "bun src/scripts/download-chart.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
