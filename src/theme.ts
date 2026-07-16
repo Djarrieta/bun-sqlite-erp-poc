@@ -7,19 +7,11 @@
 
 /** Design tokens. Exposed as CSS custom properties by `themeVars()`. */
 export const theme = {
-  colorScheme: "light dark",
 
-  // Typography — a clean sans for prose/UI paired with a monospace used as the
-  // "ledger" signature (IDs, roles, numeric columns, eyebrow labels).
-  // The scale is anchored on a 1rem (16px) base: form controls inherit
-  // `fontSizeBase`, and keeping it at 16px is what stops iOS Safari from
-  // auto-zooming on focus — so this base must never drop below 1rem.
+  colorScheme: "light dark",
+  //fonts
   fontFamily: `"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`,
-  // Display face for titles: a technical grotesk used with restraint (the one
-  // deliberate type risk), distinct from the neutral body sans.
   fontDisplay: `"Space Grotesk", "Inter", system-ui, sans-serif`,
-  // The "ledger" face: a chosen monospace (not whatever the OS ships) for IDs,
-  // figures, roles and eyebrow labels — the app's numeric signature.
   fontMono: `"JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace`,
   fontSize2xs: "0.72rem",
   fontSizeXs: "0.8rem",
